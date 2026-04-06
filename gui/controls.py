@@ -5,7 +5,7 @@ import random
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGroupBox,
     QLabel, QSlider, QDoubleSpinBox, QPushButton, QScrollArea,
-    QComboBox,
+    QComboBox, QCheckBox,
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer
 
@@ -97,6 +97,12 @@ class PendulumControlGroup(QGroupBox):
         layout = QVBoxLayout(self)
         layout.setSpacing(4)
 
+        # Enable toggle
+        self.enabled_check = QCheckBox("Enabled")
+        self.enabled_check.setChecked(params.amplitude > 0)
+        self.enabled_check.toggled.connect(self._on_change)
+        layout.addWidget(self.enabled_check)
+
         self.freq = ParamSlider("Frequency", 0.1, 12.0, params.frequency, 0.01, 3)
         self.phase = ParamSlider("Phase", 0.0, 2 * math.pi, params.phase, 0.01, 3)
         self.amp = ParamSlider("Amplitude", 0.0, 1.0, params.amplitude, 0.01, 3)
@@ -114,10 +120,11 @@ class PendulumControlGroup(QGroupBox):
         layout.addLayout(btn_row)
 
     def get_params(self) -> PendulumParams:
+        amp = self.amp.value if self.enabled_check.isChecked() else 0.0
         return PendulumParams(
             frequency=self.freq.value,
             phase=self.phase.value,
-            amplitude=self.amp.value,
+            amplitude=amp,
             damping=self.damping.value,
         )
 
@@ -126,6 +133,7 @@ class PendulumControlGroup(QGroupBox):
         self.phase.value = p.phase
         self.amp.value = p.amplitude
         self.damping.value = p.damping
+        self.enabled_check.setChecked(p.amplitude > 0)
 
     def randomize(self):
         self.set_params(PendulumParams.random())
