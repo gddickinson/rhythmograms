@@ -19,6 +19,8 @@ from gui.presets_panel import PresetsPanel
 from gui.layers_panel import LayersPanel
 from gui.gallery_panel import GalleryPanel
 from gui.physics_panel import PhysicsPanel
+from gui.atmosphere_panel import AtmospherePanel
+from effects.atmosphere import AtmosphereConfig
 from gui.style import DARK_THEME
 from utils.config import save_config, load_config
 
@@ -29,13 +31,14 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Heidersberger Rhythmogram Simulator")
-        self.setMinimumSize(QSize(1200, 800))
+        self.setMinimumSize(QSize(1440, 860))
         self.setStyleSheet(DARK_THEME)
 
         self._config = HarmonographConfig()
         self._color_config = ColorConfig()
         self._effects_config = EffectsConfig()
         self._projection = Projection3DConfig()
+        self._atmosphere_config = AtmosphereConfig()
         self._morph_dialog = None
         self._frame_capture = None
 
@@ -99,27 +102,32 @@ class MainWindow(QMainWindow):
         splitter = QSplitter(Qt.Orientation.Horizontal)
 
         self.canvas = RhythmogramCanvas()
-        self.canvas.setMinimumSize(600, 600)
+        self.canvas.setMinimumSize(500, 500)
         splitter.addWidget(self.canvas)
 
         right_panel = QTabWidget()
-        right_panel.setMaximumWidth(360)
-        right_panel.setMinimumWidth(280)
+        right_panel.setTabPosition(QTabWidget.TabPosition.North)
+        right_panel.setUsesScrollButtons(True)  # scroll arrows if tabs overflow
+        right_panel.setMaximumWidth(460)
+        right_panel.setMinimumWidth(420)
 
         self.controls = ControlPanel(self._config)
-        right_panel.addTab(self.controls, "Pendulums")
+        right_panel.addTab(self.controls, "Pend.")
 
         self.effects_panel = EffectsPanel(self._color_config, self._effects_config)
         right_panel.addTab(self.effects_panel, "Visual")
 
         self.physics_panel = PhysicsPanel()
-        right_panel.addTab(self.physics_panel, "Physics")
+        right_panel.addTab(self.physics_panel, "Phys.")
+
+        self.atmosphere_panel = AtmospherePanel()
+        right_panel.addTab(self.atmosphere_panel, "Atmos")
 
         self.layers_panel = LayersPanel()
         right_panel.addTab(self.layers_panel, "Layers")
 
         self.presets_panel = PresetsPanel()
-        right_panel.addTab(self.presets_panel, "Presets")
+        right_panel.addTab(self.presets_panel, "Preset")
 
         self.gallery_panel = GalleryPanel()
         right_panel.addTab(self.gallery_panel, "Gallery")
@@ -140,6 +148,7 @@ class MainWindow(QMainWindow):
     def _connect_signals(self):
         self.controls.config_changed.connect(self._on_config_change)
         self.physics_panel.params_changed.connect(self._on_physics_change)
+        self.atmosphere_panel.atmosphere_changed.connect(self._on_atmosphere_change)
         self.effects_panel.color_changed.connect(self._on_color_change)
         self.effects_panel.effects_changed.connect(self._on_effects_change)
         self.effects_panel.projection_changed.connect(self._on_projection_change)
@@ -201,6 +210,11 @@ class MainWindow(QMainWindow):
         self._effects_config = ec
         self.canvas.set_effects_config(ec)
         self.status_bar.showMessage("Effects updated")
+
+    def _on_atmosphere_change(self, ac):
+        self._atmosphere_config = ac
+        self.canvas.set_atmosphere_config(ac)
+        self.status_bar.showMessage("Atmosphere updated")
 
     def _on_projection_change(self, proj):
         self._projection = proj

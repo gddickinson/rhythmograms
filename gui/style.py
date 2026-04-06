@@ -113,6 +113,34 @@ QScrollArea {
     background-color: transparent;
 }
 
+QTabWidget::pane {
+    border: 1px solid #3a3a5c;
+    border-radius: 4px;
+}
+
+QTabBar::tab {
+    background-color: #2a2a4a;
+    color: #a0a0c0;
+    border: 1px solid #3a3a5c;
+    border-bottom: none;
+    padding: 4px 6px;
+    margin-right: 1px;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    font-size: 11px;
+    min-width: 40px;
+}
+
+QTabBar::tab:selected {
+    background-color: #1a1a2e;
+    color: #d0d0ff;
+    border-bottom: 1px solid #1a1a2e;
+}
+
+QTabBar::tab:hover:!selected {
+    background-color: #3a3a5c;
+}
+
 QSplitter::handle {
     background-color: #2a2a4a;
     width: 3px;

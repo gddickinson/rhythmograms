@@ -12,6 +12,7 @@ from core.trace import TraceState
 from core.projection import Projection3DConfig, compute_z, apply_perspective
 from effects.color import ColorConfig
 from effects.postprocess import EffectsConfig, apply_effects
+from effects.atmosphere import AtmosphereConfig, apply_atmosphere
 from gui.trace_renderer import draw_trace_chunk
 
 
@@ -34,6 +35,7 @@ class RhythmogramCanvas(QWidget):
         self._config = HarmonographConfig()
         self._color_config = ColorConfig()
         self._effects_config = EffectsConfig()
+        self._atmosphere_config = AtmosphereConfig()
         self._projection = Projection3DConfig()
         self._trace = None
         self._pixmap = None
@@ -95,6 +97,11 @@ class RhythmogramCanvas(QWidget):
 
     def set_effects_config(self, ec):
         self._effects_config = ec
+        self._effects_dirty = True
+        self.update()
+
+    def set_atmosphere_config(self, ac):
+        self._atmosphere_config = ac
         self._effects_dirty = True
         self.update()
 
@@ -286,12 +293,18 @@ class RhythmogramCanvas(QWidget):
             base = self._layer_compositor(base)
 
         has_fx = (self._effects_config.invert or self._effects_config.solarize
-                  or self._effects_config.bloom or self._effects_config.vignette)
+                  or self._effects_config.bloom or self._effects_config.vignette
+                  or self._atmosphere_config.has_any)
         if not has_fx:
             return base
         if self._effects_dirty or self._display_pixmap is None:
             image = base.toImage()
             image = apply_effects(image, self._effects_config)
+            if self._atmosphere_config.has_any:
+                from effects.postprocess import qimage_to_array, array_to_qimage
+                arr = qimage_to_array(image)
+                arr = apply_atmosphere(arr, self._atmosphere_config)
+                image = array_to_qimage(arr)
             self._display_pixmap = QPixmap.fromImage(image)
             self._effects_dirty = False
         return self._display_pixmap
