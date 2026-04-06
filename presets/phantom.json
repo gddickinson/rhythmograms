@@ -1,0 +1,12 @@
+{
+  "name": "Phantom",
+  "pendulums": [
+    {"frequency": 1.5, "phase": 0.0, "amplitude": 1.0, "damping": 0.008, "fm_freq": 0.04, "fm_depth": 0.06},
+    {"frequency": 2.505, "phase": 1.047, "amplitude": 0.7, "damping": 0.01},
+    {"frequency": 2.0, "phase": 1.5708, "amplitude": 1.0, "damping": 0.008},
+    {"frequency": 1.505, "phase": 2.618, "amplitude": 0.7, "damping": 0.01, "fm_freq": 0.03, "fm_depth": 0.05}
+  ],
+  "duration": 80.0,
+  "sample_rate": 1000.0,
+  "envelope": {"mode": "pulse", "frequency": 0.18, "strength": 0.7}
+}

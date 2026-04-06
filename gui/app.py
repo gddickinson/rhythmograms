@@ -71,6 +71,8 @@ class MainWindow(QMainWindow):
 
         # View menu
         view_menu = mb.addMenu("View")
+        self._add_action(view_menu, "Full Screen", "F11", self._toggle_fullscreen)
+        view_menu.addSeparator()
         self._add_action(view_menu, "Zoom In", "Ctrl+=", lambda: self._zoom_step(1.2))
         self._add_action(view_menu, "Zoom Out", "Ctrl+-", lambda: self._zoom_step(1/1.2))
         self._add_action(view_menu, "Reset Zoom", "Ctrl+0", self.canvas.reset_zoom)
@@ -132,6 +134,7 @@ class MainWindow(QMainWindow):
         self.gallery_panel = GalleryPanel()
         right_panel.addTab(self.gallery_panel, "Gallery")
 
+        self._right_panel = right_panel
         splitter.addWidget(right_panel)
         splitter.setStretchFactor(0, 4)
         splitter.setStretchFactor(1, 1)
@@ -144,10 +147,16 @@ class MainWindow(QMainWindow):
 
         QShortcut(QKeySequence("Space"), self, self.canvas.toggle_play_pause)
         QShortcut(QKeySequence("R"), self, self._on_reset)
+        QShortcut(QKeySequence("Escape"), self, self._exit_fullscreen)
+
+        # Fullscreen state
+        self._fullscreen = False
+        self._saved_geometry = None
 
     def _connect_signals(self):
         self.controls.config_changed.connect(self._on_config_change)
         self.physics_panel.params_changed.connect(self._on_physics_change)
+        self.physics_panel.trail_changed.connect(self._on_trail_change)
         self.atmosphere_panel.atmosphere_changed.connect(self._on_atmosphere_change)
         self.effects_panel.color_changed.connect(self._on_color_change)
         self.effects_panel.effects_changed.connect(self._on_effects_change)
@@ -185,6 +194,11 @@ class MainWindow(QMainWindow):
         self._apply_physics_to_config()
         self.canvas.set_config(self._config)
         self.status_bar.showMessage("Physics updated")
+
+    def _on_trail_change(self, trail_config):
+        self.canvas.set_trail_config(trail_config)
+        mode = "Trail mode" if trail_config.enabled else "Standard mode"
+        self.status_bar.showMessage(mode)
 
     def _apply_physics_to_config(self):
         """Overlay physics panel params onto the current config."""
@@ -275,6 +289,36 @@ class MainWindow(QMainWindow):
         self.canvas.restart()
         self.toolbar.set_progress(0)
         self.status_bar.showMessage("Reset")
+
+    def _toggle_fullscreen(self):
+        if self._fullscreen:
+            self._exit_fullscreen()
+        else:
+            self._enter_fullscreen()
+
+    def _enter_fullscreen(self):
+        if self._fullscreen:
+            return
+        self._fullscreen = True
+        self._saved_geometry = self.saveGeometry()
+        # Hide everything except the canvas
+        self.toolbar.hide()
+        self._right_panel.hide()
+        self.statusBar().hide()
+        self.menuBar().hide()
+        self.showFullScreen()
+
+    def _exit_fullscreen(self):
+        if not self._fullscreen:
+            return
+        self._fullscreen = False
+        self.toolbar.show()
+        self._right_panel.show()
+        self.statusBar().show()
+        self.menuBar().show()
+        self.showNormal()
+        if self._saved_geometry:
+            self.restoreGeometry(self._saved_geometry)
 
     def _zoom_step(self, factor):
         self.canvas._zoom = max(0.25, min(10.0, self.canvas._zoom * factor))

@@ -1,0 +1,11 @@
+{
+  "name": "Silk Vortex",
+  "pendulums": [
+    {"frequency": 3.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.001},
+    {"frequency": 2.001, "phase": 0.7854, "amplitude": 0.8, "damping": 0.0015},
+    {"frequency": 2.0, "phase": 1.5708, "amplitude": 1.0, "damping": 0.001},
+    {"frequency": 3.001, "phase": 2.356, "amplitude": 0.8, "damping": 0.0015}
+  ],
+  "duration": 200.0,
+  "sample_rate": 1000.0
+}

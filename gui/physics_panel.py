@@ -1,4 +1,4 @@
-"""Advanced physics controls — FM/PM, nonlinearity, strobe, and chorus."""
+"""Advanced physics controls — FM/PM, nonlinearity, strobe, chorus, and trails."""
 
 import math
 from PyQt6.QtWidgets import (
@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import pyqtSignal, Qt
 
+from core.trails import TrailConfig
 from gui.controls import ParamSlider
 
 
@@ -48,9 +49,10 @@ class FMPMGroup(QGroupBox):
 
 
 class PhysicsPanel(QWidget):
-    """Advanced physics panel — FM/PM per pendulum, strobe, and chorus."""
+    """Advanced physics panel — FM/PM per pendulum, strobe, chorus, and trails."""
 
     params_changed = pyqtSignal()
+    trail_changed = pyqtSignal(object)  # TrailConfig
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -128,6 +130,55 @@ class PhysicsPanel(QWidget):
         cg.addWidget(self.chorus_spread)
 
         layout.addWidget(chorus_group)
+
+        # Trail mode
+        trail_group = QGroupBox("Trail Mode")
+        tg = QVBoxLayout(trail_group)
+
+        tg_desc = QLabel(
+            "Show a moving point with fading trail instead of\n"
+            "accumulated trace. Toggle pendulum trails to see\n"
+            "each oscillator's individual contribution.")
+        tg_desc.setWordWrap(True)
+        tg_desc.setStyleSheet("color: #808098; font-size: 10px;")
+        tg.addWidget(tg_desc)
+
+        self.trail_enable = QCheckBox("Enable trail mode")
+        self.trail_enable.toggled.connect(self._emit_trail)
+        tg.addWidget(self.trail_enable)
+
+        self.trail_length = ParamSlider("Trail length", 50, 3000, 800, 50, 0)
+        self.trail_length.value_changed.connect(self._emit_trail)
+        tg.addWidget(self.trail_length)
+
+        self.trail_point_size = ParamSlider("Point size", 1.0, 10.0, 4.0, 0.5, 1)
+        self.trail_point_size.value_changed.connect(self._emit_trail)
+        tg.addWidget(self.trail_point_size)
+
+        self.trail_fade = ParamSlider("Fade curve", 0.5, 3.0, 1.5, 0.1, 1)
+        self.trail_fade.value_changed.connect(self._emit_trail)
+        tg.addWidget(self.trail_fade)
+
+        self.trail_pendulums = QCheckBox("Show pendulum trails")
+        self.trail_pendulums.setToolTip("Show each pendulum's individual contribution")
+        self.trail_pendulums.toggled.connect(self._emit_trail)
+        tg.addWidget(self.trail_pendulums)
+
+        # Per-pendulum trail lengths
+        pend_row = QHBoxLayout()
+        self.pend_trail_spins = []
+        for label in ["X1", "X2", "Y1", "Y2"]:
+            pend_row.addWidget(QLabel(label))
+            sp = QSpinBox()
+            sp.setRange(50, 2000)
+            sp.setValue(400)
+            sp.setSingleStep(50)
+            sp.valueChanged.connect(self._emit_trail)
+            self.pend_trail_spins.append(sp)
+            pend_row.addWidget(sp)
+        tg.addLayout(pend_row)
+
+        layout.addWidget(trail_group)
         layout.addStretch()
 
         scroll.setWidget(inner)
@@ -155,5 +206,18 @@ class PhysicsPanel(QWidget):
         self.chorus_count.setValue(config.chorus_count)
         self.chorus_spread.value = config.chorus_spread
 
+    def get_trail_config(self) -> TrailConfig:
+        return TrailConfig(
+            enabled=self.trail_enable.isChecked(),
+            trail_length=int(self.trail_length.value),
+            point_size=self.trail_point_size.value,
+            show_pendulums=self.trail_pendulums.isChecked(),
+            pendulum_trail_lengths=[sp.value() for sp in self.pend_trail_spins],
+            fade_power=self.trail_fade.value,
+        )
+
     def _emit(self, *_):
         self.params_changed.emit()
+
+    def _emit_trail(self, *_):
+        self.trail_changed.emit(self.get_trail_config())

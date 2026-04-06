@@ -9,6 +9,7 @@ from PyQt6.QtGui import QPainter, QPixmap, QColor
 
 from core.pendulum import HarmonographConfig
 from core.trace import TraceState
+from core.trails import TrailConfig, TrailBuffer
 from core.projection import Projection3DConfig, compute_z, apply_perspective
 from effects.color import ColorConfig
 from effects.postprocess import EffectsConfig, apply_effects
@@ -37,6 +38,8 @@ class RhythmogramCanvas(QWidget):
         self._effects_config = EffectsConfig()
         self._atmosphere_config = AtmosphereConfig()
         self._projection = Projection3DConfig()
+        self._trail_config = TrailConfig()
+        self._trail_buffer = None
         self._trace = None
         self._pixmap = None
         self._display_pixmap = None
@@ -62,6 +65,10 @@ class RhythmogramCanvas(QWidget):
 
         # Frame capture for animation export
         self._capturing = False
+
+        # Effect frame skipping — apply effects every N frames during animation
+        self._effect_frame_count = 0
+        self._effect_skip = 4  # apply effects every 4th frame when animating
 
         self._timer = QTimer(self)
         self._timer.setInterval(self.TIMER_INTERVAL_MS)
@@ -109,6 +116,10 @@ class RhythmogramCanvas(QWidget):
         self._projection = proj
         self.restart()
 
+    def set_trail_config(self, tc):
+        self._trail_config = tc
+        self.restart()
+
     def set_layer_compositor(self, fn):
         """Set a callable(QPixmap) -> QPixmap for layer compositing."""
         self._layer_compositor = fn
@@ -127,22 +138,36 @@ class RhythmogramCanvas(QWidget):
         self._pixmap.fill(self._color_config.bg_color)
         self._display_pixmap = None
         self._effects_dirty = True
-        self._trace = TraceState(
-            self._config, w, h, chunk_size=self.CHUNK_SIZE,
-            continuous=self._continuous,
-        )
+
+        if self._trail_config.enabled:
+            self._trail_buffer = TrailBuffer(
+                self._config, self._trail_config, w, h)
+            self._trace = None
+        else:
+            self._trail_buffer = None
+            self._trace = TraceState(
+                self._config, w, h, chunk_size=self.CHUNK_SIZE,
+                continuous=self._continuous,
+            )
+
         self._playing = True
         self._timer.start()
         self.update()
 
     def play(self):
-        if self._trace and not self._trace.is_complete:
+        if self._trail_buffer:
+            self._playing = True
+            self._trail_buffer.resume()
+            self._timer.start()
+        elif self._trace and not self._trace.is_complete:
             self._playing = True
             self._trace.resume()
             self._timer.start()
 
     def pause(self):
         self._playing = False
+        if self._trail_buffer:
+            self._trail_buffer.pause()
         if self._trace:
             self._trace.pause()
         self._timer.stop()
@@ -183,6 +208,11 @@ class RhythmogramCanvas(QWidget):
 
     # --- Animation ---
     def _draw_next_chunk(self):
+        # Trail mode: different rendering path
+        if self._trail_config.enabled and self._trail_buffer:
+            self._draw_trail_frame()
+            return
+
         if not self._trace or self._trace.is_complete:
             self._timer.stop()
             self._playing = False
@@ -233,6 +263,86 @@ class RhythmogramCanvas(QWidget):
         painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceOver)
         painter.fillRect(self._pixmap.rect(), bg)
         painter.end()
+
+    def _draw_trail_frame(self):
+        """Render a single trail frame: clear, draw fading trails, draw point."""
+        tb = self._trail_buffer
+        tc = self._trail_config
+        cc = self._color_config
+
+        if tb.is_paused:
+            return
+
+        # Advance the simulation
+        tb.advance(steps=25)
+
+        # Clear pixmap to background each frame
+        self._pixmap.fill(cc.bg_color)
+
+        painter = QPainter(self._pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.setCompositionMode(
+            QPainter.CompositionMode.CompositionMode_Plus)
+
+        from PyQt6.QtGui import QPen, QBrush
+
+        # Draw individual pendulum trails if enabled
+        if tc.show_pendulums:
+            for i in range(4):
+                x, y = tb.get_pendulum_points(i)
+                if len(x) < 2:
+                    continue
+                color = QColor(tc.pendulum_colors[i])
+                n = len(x)
+                for j in range(n - 1):
+                    # Fade: newest = full alpha, oldest = 0
+                    t = (j / max(n - 1, 1)) ** tc.fade_power
+                    alpha = int(t * 80)  # pendulum trails are subtle
+                    c = QColor(color)
+                    c.setAlpha(alpha)
+                    pen = QPen(c, 0.8)
+                    painter.setPen(pen)
+                    painter.drawLine(QPointF(x[j], y[j]), QPointF(x[j+1], y[j+1]))
+
+                # Pendulum point dot
+                if n > 0:
+                    color.setAlpha(180)
+                    painter.setPen(Qt.PenStyle.NoPen)
+                    painter.setBrush(QBrush(color))
+                    painter.drawEllipse(QPointF(x[-1], y[-1]), 3, 3)
+
+        # Draw combined trail
+        x, y = tb.get_combined_points()
+        if len(x) >= 2:
+            n = len(x)
+            for j in range(n - 1):
+                t = (j / max(n - 1, 1)) ** tc.fade_power
+                # Interpolate color along trail using color_at
+                color_t = j / max(n - 1, 1)
+                color = cc.color_at(color_t)
+                alpha = int(t * cc.line_alpha)
+                color.setAlpha(alpha)
+                width = cc.line_width * (0.3 + 0.7 * t)  # thinner at tail
+                pen = QPen(color, width)
+                pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+                painter.setPen(pen)
+                painter.drawLine(QPointF(x[j], y[j]), QPointF(x[j+1], y[j+1]))
+
+            # Leading point — bright dot
+            if n > 0:
+                head_color = cc.color_at(1.0)
+                head_color.setAlpha(255)
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.setBrush(QBrush(head_color))
+                r = tc.point_size
+                painter.drawEllipse(QPointF(x[-1], y[-1]), r, r)
+
+        painter.end()
+
+        self._effects_dirty = True
+        progress = tb.current_time / max(self._config.duration, 1)
+        self.progress_changed.emit(min(progress, 1.0))
+        self.update()
 
     def _apply_audio_modulation(self):
         """Modulate config based on audio analysis at current time."""
@@ -297,16 +407,33 @@ class RhythmogramCanvas(QWidget):
                   or self._atmosphere_config.has_any)
         if not has_fx:
             return base
-        if self._effects_dirty or self._display_pixmap is None:
+
+        # Frame skipping: during animation, only recompute effects every N frames
+        # This gives a massive speedup since effects are the bottleneck
+        self._effect_frame_count += 1
+        should_update = (
+            self._display_pixmap is None  # first time
+            or not self._playing           # paused — always update
+            or self._effects_dirty         # settings changed
+            or self._effect_frame_count % self._effect_skip == 0  # periodic
+        )
+
+        if should_update:
             image = base.toImage()
+
+            # Batch: apply standard effects
             image = apply_effects(image, self._effects_config)
+
+            # Batch: apply atmosphere effects (single conversion round-trip)
             if self._atmosphere_config.has_any:
                 from effects.postprocess import qimage_to_array, array_to_qimage
                 arr = qimage_to_array(image)
                 arr = apply_atmosphere(arr, self._atmosphere_config)
                 image = array_to_qimage(arr)
+
             self._display_pixmap = QPixmap.fromImage(image)
             self._effects_dirty = False
+
         return self._display_pixmap
 
     def paintEvent(self, event):
@@ -376,5 +503,10 @@ class RhythmogramCanvas(QWidget):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
+        # Clear atmosphere caches on resize (resolution-dependent)
+        from effects.atmosphere import clear_cache
+        clear_cache()
+        from effects.postprocess import _vignette_cache
+        _vignette_cache.clear()
         if self._config:
             self.restart()

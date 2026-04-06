@@ -126,29 +126,27 @@ def apply_bloom(arr: np.ndarray, radius: int = 5, intensity: float = 0.4,
     return np.clip(result, 0, 255).astype(np.uint8)
 
 
+_vignette_cache = {}
+
+
 def apply_vignette(arr: np.ndarray, strength: float = 0.5) -> np.ndarray:
-    """Apply radial vignette darkening toward edges.
-
-    strength: 0.0 = no effect, 1.0 = heavy darkening at corners.
-    """
+    """Apply radial vignette darkening toward edges. Mask is cached per resolution."""
     h, w = arr.shape[:2]
-    cy, cx = h / 2.0, w / 2.0
+    cache_key = (h, w, round(strength, 3))
 
-    # Create radial distance mask normalized to [0, 1]
-    y = np.arange(h, dtype=np.float32) - cy
-    x = np.arange(w, dtype=np.float32) - cx
-    yy, xx = np.meshgrid(y, x, indexing='ij')
-    max_dist = np.sqrt(cx * cx + cy * cy)
-    dist = np.sqrt(xx * xx + yy * yy) / max_dist
+    if cache_key not in _vignette_cache:
+        cy, cx = h / 2.0, w / 2.0
+        y = np.arange(h, dtype=np.float32) - cy
+        x = np.arange(w, dtype=np.float32) - cx
+        yy, xx = np.meshgrid(y, x, indexing='ij')
+        max_dist = np.sqrt(cx * cx + cy * cy)
+        dist = np.sqrt(xx * xx + yy * yy) / max_dist
+        mask = np.clip(1.0 - strength * (dist ** 2), 0, 1)
+        _vignette_cache[cache_key] = mask
 
-    # Smooth vignette: cos^2 falloff from center
-    vignette_mask = 1.0 - strength * (dist ** 2)
-    vignette_mask = np.clip(vignette_mask, 0, 1)
-
+    vignette_mask = _vignette_cache[cache_key]
     result = arr.astype(np.float32)
-    # Apply to RGB channels only (BGRA layout: channels 0,1,2)
-    for c in range(3):
-        result[:, :, c] *= vignette_mask
+    result[:, :, :3] *= vignette_mask[:, :, np.newaxis]
     return np.clip(result, 0, 255).astype(np.uint8)
 
 

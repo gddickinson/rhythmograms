@@ -1,0 +1,13 @@
+{
+  "name": "Neon Mandala",
+  "pendulums": [
+    {"frequency": 3.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.006},
+    {"frequency": 5.008, "phase": 1.047, "amplitude": 0.5, "damping": 0.008},
+    {"frequency": 3.0, "phase": 1.5708, "amplitude": 1.0, "damping": 0.006},
+    {"frequency": 5.008, "phase": 2.618, "amplitude": 0.5, "damping": 0.008}
+  ],
+  "duration": 70.0,
+  "sample_rate": 1000.0,
+  "strobe_freq": 3.0,
+  "strobe_duty": 0.6
+}

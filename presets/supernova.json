@@ -1,0 +1,14 @@
+{
+  "name": "Supernova",
+  "pendulums": [
+    {"frequency": 3.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.008},
+    {"frequency": 4.01, "phase": 1.047, "amplitude": 0.6, "damping": 0.01},
+    {"frequency": 3.0, "phase": 1.5708, "amplitude": 1.0, "damping": 0.008},
+    {"frequency": 4.01, "phase": 2.618, "amplitude": 0.6, "damping": 0.01}
+  ],
+  "duration": 60.0,
+  "sample_rate": 1000.0,
+  "chorus_count": 6,
+  "chorus_spread": 0.03,
+  "envelope": {"mode": "bounce", "frequency": 0.12, "strength": 0.7}
+}

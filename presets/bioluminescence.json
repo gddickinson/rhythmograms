@@ -1,0 +1,11 @@
+{
+  "name": "Bioluminescence",
+  "pendulums": [
+    {"frequency": 1.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.002, "pm_freq": 0.03, "pm_depth": 0.4},
+    {"frequency": 2.003, "phase": 1.2, "amplitude": 0.6, "damping": 0.003},
+    {"frequency": 1.5, "phase": 1.5708, "amplitude": 0.9, "damping": 0.002, "pm_freq": 0.025, "pm_depth": 0.3},
+    {"frequency": 2.503, "phase": 2.8, "amplitude": 0.5, "damping": 0.003}
+  ],
+  "duration": 150.0,
+  "sample_rate": 1000.0
+}

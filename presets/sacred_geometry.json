@@ -1,0 +1,13 @@
+{
+  "name": "Sacred Geometry",
+  "pendulums": [
+    {"frequency": 2.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.003},
+    {"frequency": 3.002, "phase": 0.5236, "amplitude": 0.7, "damping": 0.005},
+    {"frequency": 2.0, "phase": 1.5708, "amplitude": 1.0, "damping": 0.003},
+    {"frequency": 3.002, "phase": 1.5708, "amplitude": 0.7, "damping": 0.005}
+  ],
+  "duration": 120.0,
+  "sample_rate": 1000.0,
+  "strobe_freq": 2.5,
+  "strobe_duty": 0.55
+}

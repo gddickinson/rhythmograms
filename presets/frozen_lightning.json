@@ -1,0 +1,11 @@
+{
+  "name": "Frozen Lightning",
+  "pendulums": [
+    {"frequency": 1.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.002, "pm_freq": 0.08, "pm_depth": 0.8},
+    {"frequency": 1.003, "phase": 3.14, "amplitude": 0.95, "damping": 0.002, "pm_freq": 0.06, "pm_depth": 0.6},
+    {"frequency": 1.0, "phase": 1.5708, "amplitude": 1.0, "damping": 0.002, "pm_freq": 0.07, "pm_depth": 0.7},
+    {"frequency": 1.003, "phase": 4.712, "amplitude": 0.95, "damping": 0.002}
+  ],
+  "duration": 150.0,
+  "sample_rate": 1000.0
+}

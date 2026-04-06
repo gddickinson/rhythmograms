@@ -1,0 +1,13 @@
+{
+  "name": "Event Horizon",
+  "pendulums": [
+    {"frequency": 1.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.015},
+    {"frequency": 1.002, "phase": 1.5708, "amplitude": 0.95, "damping": 0.015},
+    {"frequency": 1.0, "phase": 1.5708, "amplitude": 1.0, "damping": 0.015},
+    {"frequency": 1.002, "phase": 3.1416, "amplitude": 0.95, "damping": 0.015}
+  ],
+  "duration": 60.0,
+  "sample_rate": 1000.0,
+  "chorus_count": 3,
+  "chorus_spread": 0.008
+}
