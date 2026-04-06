@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "pendulums": [
+    {
+      "frequency": 8.997,
+      "phase": 5.682,
+      "amplitude": 0.946,
+      "damping": 0.0238,
+      "fm_freq": 0.0,
+      "fm_depth": 0.0,
+      "pm_freq": 0.0,
+      "pm_depth": 0.0,
+      "nonlinearity": 0.0
+    },
+    {
+      "frequency": 9.018,
+      "phase": 2.995,
+      "amplitude": 0.809,
+      "damping": 0.0099,
+      "fm_freq": 0.0,
+      "fm_depth": 0.0,
+      "pm_freq": 0.0,
+      "pm_depth": 0.0,
+      "nonlinearity": 0.0
+    },
+    {
+      "frequency": 1.493,
+      "phase": 3.489,
+      "amplitude": 0.536,
+      "damping": 0.0255,
+      "fm_freq": 0.0,
+      "fm_depth": 0.0,
+      "pm_freq": 0.0,
+      "pm_depth": 0.0,
+      "nonlinearity": 0.0
+    },
+    {
+      "frequency": 1.512,
+      "phase": 5.615,
+      "amplitude": 0.74,
+      "damping": 0.0205,
+      "fm_freq": 0.0,
+      "fm_depth": 0.0,
+      "pm_freq": 0.0,
+      "pm_depth": 0.0,
+      "nonlinearity": 0.0
+    }
+  ],
+  "duration": 60.0,
+  "sample_rate": 1000.0,
+  "envelope": {
+    "mode": "bounce",
+    "frequency": 0.1,
+    "strength": 0.7
+  },
+  "strobe_freq": 4.0,
+  "strobe_duty": 0.6,
+  "chorus_count": 1,
+  "chorus_spread": 0.02,
+  "color": {
+    "line_color": "#c8dcff",
+    "bg_color": "#05050f",
+    "gradient_start": "#b0c4de",
+    "gradient_end": "#e8e8f0",
+    "gradient_mid": "#64ffb4",
+    "use_gradient": true,
+    "use_mid_color": true,
+    "interpolation": "rgb",
+    "line_alpha": 255,
+    "line_width": 1.0,
+    "velocity_width": true,
+    "velocity_width_min": 0.3,
+    "velocity_width_max": 3.0,
+    "velocity_opacity": false,
+    "velocity_opacity_min": 40,
+    "velocity_opacity_max": 255,
+    "symmetry_order": 4,
+    "mirror_horizontal": false,
+    "mirror_vertical": false,
+    "brush_type": "line",
+    "palette_name": ""
+  },
+  "effects": {
+    "invert": false,
+    "solarize": false,
+    "solarize_threshold": 128,
+    "bloom": false,
+    "bloom_radius": 5,
+    "bloom_intensity": 0.49,
+    "bloom_layers": 1,
+    "vignette": false,
+    "vignette_strength": 0.5
+  }
+}

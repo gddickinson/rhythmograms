@@ -30,12 +30,19 @@ def draw_trace_chunk(painter: QPainter, x, y, t_start: float, t_end: float,
     # Build list of transform functions for symmetry + mirrors
     transforms = _build_transforms(cc, cx, cy)
 
+    # Check for NaN (from strobe blanking)
+    import math as _math
+
     for transform in transforms:
         for i in range(n - 1):
+            # Skip NaN segments (strobe off-periods)
+            if _math.isnan(x[i]) or _math.isnan(x[i + 1]):
+                continue
+
             t = t_start + (t_end - t_start) * (i / max(n - 1, 1))
             color = cc.color_at(t)
 
-            if speeds is not None:
+            if speeds is not None and i < len(speeds):
                 spd = speeds[i]
                 width = cc.width_at_speed(spd) if cc.velocity_width else cc.line_width
                 if cc.velocity_opacity:

@@ -1,0 +1,13 @@
+{
+  "name": "Chorus Nebula",
+  "pendulums": [
+    {"frequency": 2.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.005},
+    {"frequency": 3.005, "phase": 0.8, "amplitude": 0.65, "damping": 0.007},
+    {"frequency": 3.0, "phase": 1.5708, "amplitude": 1.0, "damping": 0.005},
+    {"frequency": 2.005, "phase": 0.0, "amplitude": 0.65, "damping": 0.007}
+  ],
+  "duration": 70.0,
+  "sample_rate": 1000.0,
+  "chorus_count": 4,
+  "chorus_spread": 0.025
+}

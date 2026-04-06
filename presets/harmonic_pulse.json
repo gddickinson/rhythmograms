@@ -1,0 +1,12 @@
+{
+  "name": "Harmonic Pulse",
+  "pendulums": [
+    {"frequency": 2.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.008, "fm_freq": 0.2, "fm_depth": 0.2},
+    {"frequency": 3.005, "phase": 0.5, "amplitude": 0.6, "damping": 0.01},
+    {"frequency": 3.0, "phase": 1.5708, "amplitude": 1.0, "damping": 0.008},
+    {"frequency": 2.005, "phase": 0.0, "amplitude": 0.6, "damping": 0.01, "fm_freq": 0.15, "fm_depth": 0.15}
+  ],
+  "duration": 70.0,
+  "sample_rate": 1000.0,
+  "envelope": {"mode": "pulse", "frequency": 0.15, "strength": 0.7}
+}

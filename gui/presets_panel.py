@@ -69,9 +69,12 @@ class PresetThumbnail(QWidget):
             color.setAlpha(140)
             pen = QPen(color, 0.7)
             painter.setPen(pen)
-            # Draw every 5th point for speed
+            # Draw every 5th point for speed, skip NaN (strobe blanking)
+            import math
             step = max(1, len(x) // 2000)
             for i in range(0, len(x) - step, step):
+                if math.isnan(x[i]) or math.isnan(x[i + step]):
+                    continue
                 painter.drawLine(
                     int(x[i]), int(y[i]),
                     int(x[i + step]), int(y[i + step]),

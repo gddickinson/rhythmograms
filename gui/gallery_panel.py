@@ -57,9 +57,12 @@ class GalleryThumbnail(QWidget):
             painter.setCompositionMode(
                 QPainter.CompositionMode.CompositionMode_Plus
             )
+            import math as _math
             n = len(x)
             step = max(1, n // 2000)
             for i in range(0, n - step, step):
+                if _math.isnan(x[i]) or _math.isnan(x[i + step]):
+                    continue
                 t = i / max(n - 1, 1)
                 color = cc.color_at(t)
                 color.setAlpha(min(160, color.alpha()))
@@ -134,7 +137,7 @@ class GalleryPanel(QWidget):
         cols = 2
 
         for idx in range(count):
-            config = HarmonographConfig.smart_random()
+            config = HarmonographConfig.smart_random(use_advanced=True)
             palette = random.choice(PALETTES)
 
             cc = ColorConfig(

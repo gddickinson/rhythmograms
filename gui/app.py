@@ -18,6 +18,7 @@ from gui.toolbar import Toolbar
 from gui.presets_panel import PresetsPanel
 from gui.layers_panel import LayersPanel
 from gui.gallery_panel import GalleryPanel
+from gui.physics_panel import PhysicsPanel
 from gui.style import DARK_THEME
 from utils.config import save_config, load_config
 
@@ -62,6 +63,8 @@ class MainWindow(QMainWindow):
         self._add_action(file_menu, "Export GIF...", "Ctrl+G", self._on_export_gif)
         self._add_action(file_menu, "Export Video...", "", self._on_export_video)
         self._add_action(file_menu, "Export Time-Lapse...", "", self._on_export_timelapse)
+        file_menu.addSeparator()
+        self._add_action(file_menu, "Screenshot...", "Ctrl+Shift+S", self._on_screenshot)
 
         # View menu
         view_menu = mb.addMenu("View")
@@ -109,6 +112,9 @@ class MainWindow(QMainWindow):
         self.effects_panel = EffectsPanel(self._color_config, self._effects_config)
         right_panel.addTab(self.effects_panel, "Visual")
 
+        self.physics_panel = PhysicsPanel()
+        right_panel.addTab(self.physics_panel, "Physics")
+
         self.layers_panel = LayersPanel()
         right_panel.addTab(self.layers_panel, "Layers")
 
@@ -133,6 +139,7 @@ class MainWindow(QMainWindow):
 
     def _connect_signals(self):
         self.controls.config_changed.connect(self._on_config_change)
+        self.physics_panel.params_changed.connect(self._on_physics_change)
         self.effects_panel.color_changed.connect(self._on_color_change)
         self.effects_panel.effects_changed.connect(self._on_effects_change)
         self.effects_panel.projection_changed.connect(self._on_projection_change)
@@ -160,8 +167,30 @@ class MainWindow(QMainWindow):
     # --- Handlers ---
     def _on_config_change(self, config):
         self._config = config
-        self.canvas.set_config(config)
+        # Apply physics params on top
+        self._apply_physics_to_config()
+        self.canvas.set_config(self._config)
         self.status_bar.showMessage("Parameters updated")
+
+    def _on_physics_change(self):
+        self._apply_physics_to_config()
+        self.canvas.set_config(self._config)
+        self.status_bar.showMessage("Physics updated")
+
+    def _apply_physics_to_config(self):
+        """Overlay physics panel params onto the current config."""
+        pp = self.physics_panel.get_physics_params()
+        for i, fm in enumerate(pp["fm_params"]):
+            p = self._config.pendulums[i]
+            p.fm_freq = fm["fm_freq"]
+            p.fm_depth = fm["fm_depth"]
+            p.pm_freq = fm["pm_freq"]
+            p.pm_depth = fm["pm_depth"]
+            p.nonlinearity = fm["nonlinearity"]
+        self._config.strobe_freq = pp["strobe_freq"]
+        self._config.strobe_duty = pp["strobe_duty"]
+        self._config.chorus_count = pp["chorus_count"]
+        self._config.chorus_spread = pp["chorus_spread"]
 
     def _on_color_change(self, cc):
         self._color_config = cc
@@ -181,6 +210,7 @@ class MainWindow(QMainWindow):
     def _on_preset_selected(self, config, name):
         self._config = config
         self.controls.set_config(config)
+        self.physics_panel.set_from_config(config)
         self.canvas.set_config(config)
         self.status_bar.showMessage(f'Preset: "{name}"')
 
@@ -391,6 +421,16 @@ class MainWindow(QMainWindow):
                 f"Exported {capture.frame_count} frames: {path}")
         else:
             self.status_bar.showMessage("Export failed")
+
+    # --- Screenshot ---
+    def _on_screenshot(self):
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Save Screenshot", "screenshot.png",
+            "PNG (*.png);;JPEG (*.jpg);;All (*)")
+        if path:
+            pixmap = self.grab()
+            pixmap.save(path)
+            self.status_bar.showMessage(f"Screenshot saved: {path}")
 
     # --- Save/Load ---
     def _on_save(self):

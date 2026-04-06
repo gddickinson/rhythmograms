@@ -286,7 +286,7 @@ class ControlPanel(QWidget):
         self.config_changed.emit(config)
 
     def smart_randomize_all(self):
-        config = HarmonographConfig.smart_random()
+        config = HarmonographConfig.smart_random(use_advanced=True)
         self.set_config(config)
         self.config_changed.emit(config)
 

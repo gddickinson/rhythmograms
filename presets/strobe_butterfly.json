@@ -1,0 +1,13 @@
+{
+  "name": "Strobe Butterfly",
+  "pendulums": [
+    {"frequency": 2.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.004},
+    {"frequency": 3.005, "phase": 0.8, "amplitude": 0.65, "damping": 0.006},
+    {"frequency": 3.0, "phase": 1.5708, "amplitude": 1.0, "damping": 0.004},
+    {"frequency": 2.005, "phase": 0.0, "amplitude": 0.65, "damping": 0.006}
+  ],
+  "duration": 80.0,
+  "sample_rate": 1000.0,
+  "strobe_freq": 3.0,
+  "strobe_duty": 0.55
+}

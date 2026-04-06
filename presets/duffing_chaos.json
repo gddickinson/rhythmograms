@@ -1,0 +1,11 @@
+{
+  "name": "Duffing Chaos",
+  "pendulums": [
+    {"frequency": 2.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.005, "nonlinearity": 0.15},
+    {"frequency": 3.01, "phase": 0.5, "amplitude": 0.5, "damping": 0.008, "nonlinearity": 0.08},
+    {"frequency": 3.0, "phase": 1.5, "amplitude": 1.0, "damping": 0.005, "nonlinearity": 0.15},
+    {"frequency": 2.01, "phase": 0.0, "amplitude": 0.5, "damping": 0.008, "nonlinearity": 0.08}
+  ],
+  "duration": 40.0,
+  "sample_rate": 500.0
+}
