@@ -1,0 +1,11 @@
+{
+  "name": "Resonance",
+  "pendulums": [
+    {"frequency": 2.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.007},
+    {"frequency": 3.0, "phase": 0.0, "amplitude": 0.8, "damping": 0.009},
+    {"frequency": 5.0, "phase": 1.5708, "amplitude": 1.0, "damping": 0.007},
+    {"frequency": 4.0, "phase": 0.7854, "amplitude": 0.6, "damping": 0.011}
+  ],
+  "duration": 60.0,
+  "sample_rate": 1000.0
+}

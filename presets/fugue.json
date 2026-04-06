@@ -1,0 +1,11 @@
+{
+  "name": "Fugue",
+  "pendulums": [
+    {"frequency": 3.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.01},
+    {"frequency": 4.003, "phase": 0.7, "amplitude": 0.6, "damping": 0.015},
+    {"frequency": 4.0, "phase": 1.0, "amplitude": 1.0, "damping": 0.01},
+    {"frequency": 3.003, "phase": 2.3, "amplitude": 0.6, "damping": 0.015}
+  ],
+  "duration": 60.0,
+  "sample_rate": 1000.0
+}

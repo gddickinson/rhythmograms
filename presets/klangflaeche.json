@@ -1,0 +1,11 @@
+{
+  "name": "Klangfl\u00e4che",
+  "pendulums": [
+    {"frequency": 2.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.012},
+    {"frequency": 3.01, "phase": 0.5, "amplitude": 0.5, "damping": 0.018},
+    {"frequency": 3.0, "phase": 1.5, "amplitude": 1.0, "damping": 0.012},
+    {"frequency": 2.01, "phase": 0.0, "amplitude": 0.5, "damping": 0.018}
+  ],
+  "duration": 60.0,
+  "sample_rate": 1000.0
+}

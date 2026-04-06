@@ -1,0 +1,11 @@
+{
+  "name": "Nocturne",
+  "pendulums": [
+    {"frequency": 1.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.004},
+    {"frequency": 1.002, "phase": 3.14159, "amplitude": 0.8, "damping": 0.005},
+    {"frequency": 1.0, "phase": 1.5708, "amplitude": 1.0, "damping": 0.004},
+    {"frequency": 1.002, "phase": 4.712, "amplitude": 0.8, "damping": 0.005}
+  ],
+  "duration": 100.0,
+  "sample_rate": 1000.0
+}

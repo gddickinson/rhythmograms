@@ -1,0 +1,11 @@
+{
+  "name": "Prelude",
+  "pendulums": [
+    {"frequency": 1.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.006},
+    {"frequency": 2.005, "phase": 1.2, "amplitude": 0.7, "damping": 0.01},
+    {"frequency": 1.5, "phase": 0.8, "amplitude": 1.0, "damping": 0.006},
+    {"frequency": 3.005, "phase": 2.1, "amplitude": 0.4, "damping": 0.012}
+  ],
+  "duration": 80.0,
+  "sample_rate": 1000.0
+}

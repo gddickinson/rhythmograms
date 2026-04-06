@@ -1,0 +1,11 @@
+{
+  "name": "Orbital Bloom",
+  "pendulums": [
+    {"frequency": 2.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.008},
+    {"frequency": 6.01, "phase": 0.3, "amplitude": 0.35, "damping": 0.02},
+    {"frequency": 2.0, "phase": 1.5708, "amplitude": 1.0, "damping": 0.008},
+    {"frequency": 6.01, "phase": 1.8, "amplitude": 0.35, "damping": 0.02}
+  ],
+  "duration": 70.0,
+  "sample_rate": 1000.0
+}

@@ -1,0 +1,11 @@
+{
+  "name": "Spirograph Decay",
+  "pendulums": [
+    {"frequency": 5.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.02},
+    {"frequency": 3.0, "phase": 1.0, "amplitude": 0.5, "damping": 0.025},
+    {"frequency": 4.0, "phase": 0.5, "amplitude": 1.0, "damping": 0.02},
+    {"frequency": 7.0, "phase": 2.0, "amplitude": 0.3, "damping": 0.03}
+  ],
+  "duration": 50.0,
+  "sample_rate": 1000.0
+}
