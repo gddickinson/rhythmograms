@@ -30,6 +30,13 @@ class ColorConfig:
     # Rotational symmetry
     symmetry_order: int = 1          # 1 = none, 2-12 = N-fold
 
+    # Mirror modes
+    mirror_horizontal: bool = False
+    mirror_vertical: bool = False
+
+    # Brush type
+    brush_type: str = "line"         # "line", "dot", "airbrush", "chalk", "ribbon"
+
     # Palette (empty = custom)
     palette_name: str = ""
 
@@ -143,6 +150,9 @@ class ColorConfig:
             "velocity_opacity_min": self.velocity_opacity_min,
             "velocity_opacity_max": self.velocity_opacity_max,
             "symmetry_order": self.symmetry_order,
+            "mirror_horizontal": self.mirror_horizontal,
+            "mirror_vertical": self.mirror_vertical,
+            "brush_type": self.brush_type,
             "palette_name": self.palette_name,
         }
 
@@ -166,5 +176,8 @@ class ColorConfig:
             velocity_opacity_min=d.get("velocity_opacity_min", 40),
             velocity_opacity_max=d.get("velocity_opacity_max", 255),
             symmetry_order=d.get("symmetry_order", 1),
+            mirror_horizontal=d.get("mirror_horizontal", False),
+            mirror_vertical=d.get("mirror_vertical", False),
+            brush_type=d.get("brush_type", "line"),
             palette_name=d.get("palette_name", ""),
         )
