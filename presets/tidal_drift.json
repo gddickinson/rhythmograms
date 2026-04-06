@@ -1,0 +1,11 @@
+{
+  "name": "Tidal Drift",
+  "pendulums": [
+    {"frequency": 1.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.002},
+    {"frequency": 2.005, "phase": 2.356, "amplitude": 0.6, "damping": 0.004},
+    {"frequency": 1.5, "phase": 0.7854, "amplitude": 0.9, "damping": 0.003},
+    {"frequency": 2.505, "phase": 3.927, "amplitude": 0.5, "damping": 0.005}
+  ],
+  "duration": 120.0,
+  "sample_rate": 1000.0
+}

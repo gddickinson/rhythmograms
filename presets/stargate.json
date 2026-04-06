@@ -1,0 +1,11 @@
+{
+  "name": "Stargate",
+  "pendulums": [
+    {"frequency": 5.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.01},
+    {"frequency": 7.01, "phase": 0.628, "amplitude": 0.5, "damping": 0.015},
+    {"frequency": 5.0, "phase": 1.5708, "amplitude": 1.0, "damping": 0.01},
+    {"frequency": 7.01, "phase": 2.199, "amplitude": 0.5, "damping": 0.015}
+  ],
+  "duration": 60.0,
+  "sample_rate": 1000.0
+}

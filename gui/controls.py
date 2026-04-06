@@ -1,14 +1,15 @@
-"""Pendulum parameter control panel with sliders and spinboxes."""
+"""Pendulum parameter control panel with sliders, spinboxes, and envelope controls."""
 
 import math
 import random
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGroupBox,
     QLabel, QSlider, QDoubleSpinBox, QPushButton, QScrollArea,
+    QComboBox,
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer
 
-from core.pendulum import PendulumParams, HarmonographConfig
+from core.pendulum import PendulumParams, HarmonographConfig, EnvelopeConfig, ENVELOPE_MODES
 
 
 class ParamSlider(QWidget):
@@ -22,7 +23,7 @@ class ParamSlider(QWidget):
         super().__init__(parent)
         self._min = min_val
         self._max = max_val
-        self._steps = 1000  # slider resolution
+        self._steps = 1000
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 2, 0, 2)
@@ -134,8 +135,76 @@ class PendulumControlGroup(QGroupBox):
         self.params_changed.emit()
 
 
+class EnvelopeControlGroup(QGroupBox):
+    """Controls for envelope modulation (energy injection modes)."""
+
+    params_changed = pyqtSignal()
+
+    def __init__(self, envelope: EnvelopeConfig = None, parent=None):
+        super().__init__("Energy Envelope", parent)
+        if envelope is None:
+            envelope = EnvelopeConfig()
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(4)
+
+        # Mode selector
+        row = QHBoxLayout()
+        row.addWidget(QLabel("Mode"))
+        self.mode_combo = QComboBox()
+        self.mode_combo.addItems(ENVELOPE_MODES)
+        self.mode_combo.setCurrentText(envelope.mode)
+        self.mode_combo.currentTextChanged.connect(self._on_change)
+        row.addWidget(self.mode_combo, stretch=1)
+        layout.addLayout(row)
+
+        # Description label
+        self._desc_label = QLabel()
+        self._desc_label.setWordWrap(True)
+        self._desc_label.setStyleSheet("color: #808098; font-size: 10px;")
+        layout.addWidget(self._desc_label)
+
+        # Frequency
+        self.freq = ParamSlider("Cycle Hz", 0.01, 1.0, envelope.frequency, 0.01, 3)
+        self.freq.value_changed.connect(self._on_change)
+        layout.addWidget(self.freq)
+
+        # Strength
+        self.strength = ParamSlider("Strength", 0.0, 1.0, envelope.strength, 0.01, 2)
+        self.strength.value_changed.connect(self._on_change)
+        layout.addWidget(self.strength)
+
+        self._update_description()
+
+    def get_envelope(self) -> EnvelopeConfig:
+        return EnvelopeConfig(
+            mode=self.mode_combo.currentText(),
+            frequency=self.freq.value,
+            strength=self.strength.value,
+        )
+
+    def set_envelope(self, env: EnvelopeConfig):
+        self.mode_combo.setCurrentText(env.mode)
+        self.freq.value = env.frequency
+        self.strength.value = env.strength
+        self._update_description()
+
+    def _on_change(self, *_args):
+        self._update_description()
+        self.params_changed.emit()
+
+    def _update_description(self):
+        descs = {
+            "none": "Standard damping — trace decays to a point",
+            "breathe": "Smooth pulsing — amplitude rises and falls sinusoidally",
+            "pulse": "Energy kicks — damping resets periodically, trace snaps back",
+            "bounce": "Triangle bounce — symmetric expansion and contraction cycles",
+        }
+        self._desc_label.setText(descs.get(self.mode_combo.currentText(), ""))
+
+
 class ControlPanel(QWidget):
-    """Full control panel with 4 pendulum groups."""
+    """Full control panel with 4 pendulum groups and envelope controls."""
 
     config_changed = pyqtSignal(object)  # emits HarmonographConfig
 
@@ -168,13 +237,23 @@ class ControlPanel(QWidget):
             self.groups.append(group)
             layout.addWidget(group)
 
+        # Envelope controls
+        self.envelope_group = EnvelopeControlGroup(config.envelope)
+        self.envelope_group.params_changed.connect(self._schedule_emit)
+        layout.addWidget(self.envelope_group)
+
         # Global buttons
         btn_row = QHBoxLayout()
         rand_all = QPushButton("Randomize All")
-        rand_all.setObjectName("accent")
         rand_all.clicked.connect(self.randomize_all)
         btn_row.addStretch()
         btn_row.addWidget(rand_all)
+
+        smart_rand = QPushButton("Smart Randomize")
+        smart_rand.setObjectName("accent")
+        smart_rand.setToolTip("Generate aesthetic configs with near-integer frequency ratios")
+        smart_rand.clicked.connect(self.smart_randomize_all)
+        btn_row.addWidget(smart_rand)
         layout.addLayout(btn_row)
 
         layout.addStretch()
@@ -192,15 +271,22 @@ class ControlPanel(QWidget):
 
     def get_config(self) -> HarmonographConfig:
         return HarmonographConfig(
-            pendulums=[g.get_params() for g in self.groups]
+            pendulums=[g.get_params() for g in self.groups],
+            envelope=self.envelope_group.get_envelope(),
         )
 
     def set_config(self, config: HarmonographConfig):
         for i, group in enumerate(self.groups):
             group.set_params(config.pendulums[i])
+        self.envelope_group.set_envelope(config.envelope)
 
     def randomize_all(self):
         config = HarmonographConfig.random()
+        self.set_config(config)
+        self.config_changed.emit(config)
+
+    def smart_randomize_all(self):
+        config = HarmonographConfig.smart_random()
         self.set_config(config)
         self.config_changed.emit(config)
 

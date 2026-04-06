@@ -1,0 +1,11 @@
+{
+  "name": "Fibonacci Waltz",
+  "pendulums": [
+    {"frequency": 3.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.005},
+    {"frequency": 5.005, "phase": 0.785, "amplitude": 0.7, "damping": 0.007},
+    {"frequency": 2.0, "phase": 1.5708, "amplitude": 1.0, "damping": 0.005},
+    {"frequency": 3.005, "phase": 2.356, "amplitude": 0.7, "damping": 0.007}
+  ],
+  "duration": 90.0,
+  "sample_rate": 1000.0
+}

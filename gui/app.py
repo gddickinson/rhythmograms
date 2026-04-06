@@ -25,7 +25,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Heidersberger Rhythmogram Simulator")
-        self.setMinimumSize(QSize(1100, 700))
+        self.setMinimumSize(QSize(1200, 800))
         self.setStyleSheet(DARK_THEME)
 
         self._config = HarmonographConfig()
@@ -37,6 +37,7 @@ class MainWindow(QMainWindow):
 
         # Start with default configuration
         self.canvas.set_color_config(self._color_config)
+        self.canvas.set_effects_config(self._effects_config)
         self.canvas.set_config(self._config)
 
     def _build_ui(self):
@@ -53,14 +54,15 @@ class MainWindow(QMainWindow):
         # Main splitter: canvas | controls
         splitter = QSplitter(Qt.Orientation.Horizontal)
 
-        # Canvas (left, larger)
+        # Canvas (left, larger) — give it generous space
         self.canvas = RhythmogramCanvas()
+        self.canvas.setMinimumSize(600, 600)
         splitter.addWidget(self.canvas)
 
-        # Right panel with tabs
+        # Right panel with tabs — compact controls
         right_panel = QTabWidget()
-        right_panel.setMaximumWidth(380)
-        right_panel.setMinimumWidth(300)
+        right_panel.setMaximumWidth(360)
+        right_panel.setMinimumWidth(280)
 
         self.controls = ControlPanel(self._config)
         right_panel.addTab(self.controls, "Pendulums")
@@ -72,7 +74,7 @@ class MainWindow(QMainWindow):
         right_panel.addTab(self.presets_panel, "Presets")
 
         splitter.addWidget(right_panel)
-        splitter.setStretchFactor(0, 3)
+        splitter.setStretchFactor(0, 4)
         splitter.setStretchFactor(1, 1)
 
         main_layout.addWidget(splitter)
@@ -108,6 +110,8 @@ class MainWindow(QMainWindow):
         self.toolbar.export_svg_clicked.connect(self._on_export_svg)
         self.toolbar.save_clicked.connect(self._on_save)
         self.toolbar.load_clicked.connect(self._on_load)
+        self.toolbar.continuous_toggled.connect(self._on_continuous_toggle)
+        self.toolbar.fade_rate_changed.connect(self._on_fade_rate_change)
 
         # Canvas progress
         self.canvas.progress_changed.connect(self.toolbar.set_progress)
@@ -127,13 +131,23 @@ class MainWindow(QMainWindow):
 
     def _on_effects_change(self, effects_config: EffectsConfig):
         self._effects_config = effects_config
-        self.status_bar.showMessage("Effects updated (apply on export or reset)")
+        self.canvas.set_effects_config(effects_config)
+        self.status_bar.showMessage("Effects updated (live preview)")
 
     def _on_preset_selected(self, config: HarmonographConfig, name: str):
         self._config = config
         self.controls.set_config(config)
         self.canvas.set_config(config)
         self.status_bar.showMessage(f'Preset loaded: "{name}"')
+
+    def _on_continuous_toggle(self, enabled: bool):
+        self.canvas.continuous = enabled
+        self.canvas.restart()
+        mode = "Continuous" if enabled else "Standard"
+        self.status_bar.showMessage(f"{mode} mode")
+
+    def _on_fade_rate_change(self, value: int):
+        self.canvas.fade_rate = value
 
     def _on_reset(self):
         self.canvas.restart()
@@ -190,6 +204,7 @@ class MainWindow(QMainWindow):
                 self.effects_panel.set_color_config(color)
                 self.effects_panel.set_effects_config(effects)
                 self.canvas.set_color_config(color)
+                self.canvas.set_effects_config(effects)
                 self.canvas.set_config(config)
                 self.status_bar.showMessage(f"Configuration loaded: {path}")
             except Exception as e:

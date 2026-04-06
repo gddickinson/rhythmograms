@@ -1,0 +1,11 @@
+{
+  "name": "Silk Threads",
+  "pendulums": [
+    {"frequency": 2.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.002},
+    {"frequency": 3.002, "phase": 0.3927, "amplitude": 0.85, "damping": 0.003},
+    {"frequency": 2.0, "phase": 1.5708, "amplitude": 1.0, "damping": 0.002},
+    {"frequency": 3.002, "phase": 1.9635, "amplitude": 0.85, "damping": 0.003}
+  ],
+  "duration": 120.0,
+  "sample_rate": 1000.0
+}

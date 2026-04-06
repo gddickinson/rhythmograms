@@ -1,0 +1,11 @@
+{
+  "name": "Quantum Interference",
+  "pendulums": [
+    {"frequency": 4.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.007},
+    {"frequency": 4.03, "phase": 1.5708, "amplitude": 0.9, "damping": 0.007},
+    {"frequency": 3.0, "phase": 0.5236, "amplitude": 1.0, "damping": 0.007},
+    {"frequency": 3.03, "phase": 2.094, "amplitude": 0.9, "damping": 0.007}
+  ],
+  "duration": 80.0,
+  "sample_rate": 1000.0
+}

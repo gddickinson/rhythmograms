@@ -1,13 +1,14 @@
-"""Toolbar with transport controls (play/pause/reset) and file actions."""
+"""Toolbar with transport controls, continuous mode toggle, and file actions."""
 
 from PyQt6.QtWidgets import (
     QWidget, QHBoxLayout, QPushButton, QProgressBar, QLabel,
+    QCheckBox, QSlider,
 )
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import pyqtSignal, Qt
 
 
 class Toolbar(QWidget):
-    """Top toolbar with play/pause, reset, export, save/load buttons."""
+    """Top toolbar with play/pause, reset, continuous mode, export, save/load."""
 
     play_clicked = pyqtSignal()
     pause_clicked = pyqtSignal()
@@ -16,6 +17,8 @@ class Toolbar(QWidget):
     export_svg_clicked = pyqtSignal()
     save_clicked = pyqtSignal()
     load_clicked = pyqtSignal()
+    continuous_toggled = pyqtSignal(bool)
+    fade_rate_changed = pyqtSignal(int)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -39,14 +42,36 @@ class Toolbar(QWidget):
         self.reset_btn.clicked.connect(self.reset_clicked)
         layout.addWidget(self.reset_btn)
 
-        layout.addSpacing(20)
+        layout.addSpacing(10)
+
+        # Continuous mode
+        self.continuous_check = QCheckBox("Continuous")
+        self.continuous_check.setToolTip(
+            "Continuous mode: pendulums run forever, old traces fade out"
+        )
+        self.continuous_check.toggled.connect(self.continuous_toggled)
+        layout.addWidget(self.continuous_check)
+
+        self.fade_label = QLabel("Fade:")
+        self.fade_label.setFixedWidth(32)
+        layout.addWidget(self.fade_label)
+
+        self.fade_slider = QSlider(Qt.Orientation.Horizontal)
+        self.fade_slider.setRange(1, 20)
+        self.fade_slider.setValue(3)
+        self.fade_slider.setFixedWidth(80)
+        self.fade_slider.setToolTip("Trace fade rate (higher = faster fade)")
+        self.fade_slider.valueChanged.connect(self.fade_rate_changed)
+        layout.addWidget(self.fade_slider)
+
+        layout.addSpacing(10)
 
         # Progress
         self.progress = QProgressBar()
         self.progress.setRange(0, 1000)
         self.progress.setValue(0)
         self.progress.setFixedHeight(14)
-        self.progress.setFixedWidth(200)
+        self.progress.setFixedWidth(160)
         layout.addWidget(self.progress)
 
         self.progress_label = QLabel("0%")

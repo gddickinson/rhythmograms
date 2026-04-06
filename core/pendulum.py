@@ -30,6 +30,52 @@ class PendulumParams:
             damping=random.uniform(0.001, 0.05),
         )
 
+    @classmethod
+    def smart_random(cls, base_freq: float = None) -> "PendulumParams":
+        """Random params with near-integer frequency ratio for aesthetic results."""
+        if base_freq is None:
+            base_freq = random.choice([1.0, 1.5, 2.0])
+        ratio = random.choice([1, 2, 3, 4, 5, 6])
+        detune = random.uniform(-0.02, 0.02)
+        freq = base_freq * ratio + detune
+        return cls(
+            frequency=max(0.5, min(12.0, freq)),
+            phase=random.uniform(0, 2 * math.pi),
+            amplitude=random.uniform(0.4, 1.0),
+            damping=random.uniform(0.005, 0.03),
+        )
+
+
+ENVELOPE_MODES = ["none", "breathe", "pulse", "bounce"]
+
+
+@dataclass
+class EnvelopeConfig:
+    """Envelope modulation that modifies the damping behavior over time.
+
+    - breathe: smooth sinusoidal amplitude modulation (in/out pulsing)
+    - pulse: periodic energy kick (collapse then snap back to full size)
+    - bounce: symmetric triangle wave (grow and shrink, no net decay)
+    """
+    mode: str = "none"           # "none", "breathe", "pulse", "bounce"
+    frequency: float = 0.1      # Hz — how fast the envelope cycles
+    strength: float = 0.7       # 0.0-1.0 — blend between base damping and envelope
+
+    def to_dict(self) -> dict:
+        return {
+            "mode": self.mode,
+            "frequency": self.frequency,
+            "strength": self.strength,
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "EnvelopeConfig":
+        return cls(
+            mode=d.get("mode", "none"),
+            frequency=d.get("frequency", 0.1),
+            strength=d.get("strength", 0.7),
+        )
+
 
 @dataclass
 class HarmonographConfig:
@@ -45,6 +91,7 @@ class HarmonographConfig:
     ])
     duration: float = 60.0       # seconds
     sample_rate: float = 1000.0  # points per second
+    envelope: EnvelopeConfig = field(default_factory=EnvelopeConfig)
 
     def __post_init__(self):
         if len(self.pendulums) != 4:
@@ -59,16 +106,25 @@ class HarmonographConfig:
             "pendulums": [p.to_dict() for p in self.pendulums],
             "duration": self.duration,
             "sample_rate": self.sample_rate,
+            "envelope": self.envelope.to_dict(),
         }
 
     @classmethod
     def from_dict(cls, d: dict) -> "HarmonographConfig":
+        envelope = EnvelopeConfig.from_dict(d["envelope"]) if "envelope" in d else EnvelopeConfig()
         return cls(
             pendulums=[PendulumParams.from_dict(p) for p in d["pendulums"]],
             duration=d.get("duration", 60.0),
             sample_rate=d.get("sample_rate", 1000.0),
+            envelope=envelope,
         )
 
     @classmethod
     def random(cls) -> "HarmonographConfig":
         return cls(pendulums=[PendulumParams.random() for _ in range(4)])
+
+    @classmethod
+    def smart_random(cls) -> "HarmonographConfig":
+        """Generate aesthetically pleasing random config."""
+        base = random.choice([1.0, 1.5, 2.0])
+        return cls(pendulums=[PendulumParams.smart_random(base) for _ in range(4)])

@@ -1,6 +1,8 @@
-"""Export rhythmograms to PNG and SVG formats."""
+"""Export rhythmograms to PNG and SVG formats with full feature support."""
 
-from PyQt6.QtCore import QSize, QRectF
+import math
+import numpy as np
+from PyQt6.QtCore import QSize, QRectF, QPointF, Qt
 from PyQt6.QtGui import QImage, QPainter, QPen, QColor
 from PyQt6.QtSvg import QSvgGenerator
 
@@ -22,9 +24,10 @@ def export_png(path: str, config: HarmonographConfig,
 def export_svg(path: str, config: HarmonographConfig,
                color_config: ColorConfig,
                width: int = 4096, height: int = 4096):
-    """Render and save an SVG (vector, no effects)."""
+    """Render and save an SVG (vector, no post-processing effects)."""
     engine = HarmonographEngine(config)
     x, y = engine.compute_normalized(width, height)
+    speed_range = engine.compute_speed_range()
 
     generator = QSvgGenerator()
     generator.setFileName(path)
@@ -35,19 +38,9 @@ def export_svg(path: str, config: HarmonographConfig,
 
     painter = QPainter(generator)
     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-
-    # Background
     painter.fillRect(QRectF(0, 0, width, height), color_config.bg_color)
 
-    # Draw trace
-    n = len(x)
-    for i in range(n - 1):
-        t = i / max(n - 1, 1)
-        color = color_config.color_at(t)
-        pen = QPen(color, color_config.line_width)
-        painter.setPen(pen)
-        painter.drawLine(int(x[i]), int(y[i]), int(x[i + 1]), int(y[i + 1]))
-
+    _draw_trace(painter, x, y, color_config, speed_range, width, height)
     painter.end()
 
 
@@ -56,6 +49,7 @@ def _render_to_qimage(config: HarmonographConfig, color_config: ColorConfig,
     """Render the full trace to a QImage."""
     engine = HarmonographEngine(config)
     x, y = engine.compute_normalized(width, height)
+    speed_range = engine.compute_speed_range()
 
     image = QImage(width, height, QImage.Format.Format_ARGB32)
     image.fill(color_config.bg_color)
@@ -67,13 +61,68 @@ def _render_to_qimage(config: HarmonographConfig, color_config: ColorConfig,
     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
     painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Plus)
 
-    n = len(x)
-    for i in range(n - 1):
-        t = i / max(n - 1, 1)
-        color = color_config.color_at(t)
-        pen = QPen(color, color_config.line_width)
-        painter.setPen(pen)
-        painter.drawLine(int(x[i]), int(y[i]), int(x[i + 1]), int(y[i + 1]))
-
+    _draw_trace(painter, x, y, color_config, speed_range, width, height)
     painter.end()
     return image
+
+
+def _draw_trace(painter: QPainter, x, y, cc: ColorConfig,
+                speed_range: tuple, canvas_w: int, canvas_h: int):
+    """Draw the full trace with velocity sensitivity and symmetry."""
+    n = len(x)
+    if n < 2:
+        return
+
+    sym = cc.symmetry_order
+    needs_velocity = cc.velocity_width or cc.velocity_opacity
+    speeds = None
+
+    if needs_velocity:
+        dx = np.diff(x)
+        dy = np.diff(y)
+        speed = np.sqrt(dx * dx + dy * dy)
+        s_min, s_max = speed_range
+        span = s_max - s_min
+        if span > 1e-10:
+            speeds = np.clip((speed - s_min) / span, 0.0, 1.0)
+        else:
+            speeds = np.zeros(n - 1)
+
+    cx = canvas_w / 2.0
+    cy = canvas_h / 2.0
+
+    for rot in range(max(1, sym)):
+        angle = (2.0 * math.pi * rot / sym) if sym > 1 else 0.0
+        cos_a = math.cos(angle)
+        sin_a = math.sin(angle)
+
+        for i in range(n - 1):
+            t = i / max(n - 1, 1)
+            color = cc.color_at(t)
+
+            if speeds is not None:
+                spd = speeds[i]
+                width = cc.width_at_speed(spd) if cc.velocity_width else cc.line_width
+                if cc.velocity_opacity:
+                    color.setAlpha(cc.alpha_at_speed(spd))
+            else:
+                width = cc.line_width
+
+            pen = QPen(color, width)
+            pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+            painter.setPen(pen)
+
+            if sym > 1:
+                dx_r = x[i] - cx
+                dy_r = y[i] - cy
+                x1 = cx + dx_r * cos_a - dy_r * sin_a
+                y1 = cy + dx_r * sin_a + dy_r * cos_a
+                dx_r = x[i + 1] - cx
+                dy_r = y[i + 1] - cy
+                x2 = cx + dx_r * cos_a - dy_r * sin_a
+                y2 = cy + dx_r * sin_a + dy_r * cos_a
+            else:
+                x1, y1 = x[i], y[i]
+                x2, y2 = x[i + 1], y[i + 1]
+
+            painter.drawLine(QPointF(x1, y1), QPointF(x2, y2))

@@ -1,0 +1,11 @@
+{
+  "name": "Cathedral Rose",
+  "pendulums": [
+    {"frequency": 3.0, "phase": 0.0, "amplitude": 1.0, "damping": 0.006},
+    {"frequency": 5.01, "phase": 1.047, "amplitude": 0.6, "damping": 0.008},
+    {"frequency": 3.0, "phase": 1.5708, "amplitude": 1.0, "damping": 0.006},
+    {"frequency": 5.01, "phase": 2.618, "amplitude": 0.6, "damping": 0.008}
+  ],
+  "duration": 80.0,
+  "sample_rate": 1000.0
+}
