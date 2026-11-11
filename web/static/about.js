@@ -36,9 +36,7 @@ route('about', async () => {
   <p>The trace engine matches NumPy to about 1e-12 (see <a href="#/check">Cross-check</a>);
   colours, bloom, vignette, god rays, chromatic aberration, heat distortion and colour grading match the Python
   effects to within one grey level in node tests. Smoke glow and film grain use the same algorithms with a different
-  random noise field. One deliberate difference: in continuous mode, presets with a Duffing pendulum replay their
-  full trace, while the desktop app restarts the integration every 300 points (an open question in the repository's
-  SESSION_LOG.md).</p>
+  random noise field.</p>
 
   <h2>Run it yourself</h2>
   <h3>Desktop app (PyQt6)</h3>

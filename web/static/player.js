@@ -35,7 +35,7 @@ export class Player {
     this.pos = 0; this.time = 0; this.mode = st.tr.enabled ? 'trail' : st.cont ? 'continuous' : 'finite';
     this.N = totalPoints(this.cfg); this.tr = null; this.tb = null; this.eng = null;
     if (this.mode === 'trail') this.tb = new TrailBuffer(this.cfg, st.tr, W, H);
-    else if (this.mode === 'finite' || this.cfg.pendulums.some(p => p.nonlinearity !== 0)) this.tr = fullTrace(this.cfg, W, H);
+    else if (this.mode === 'finite') this.tr = fullTrace(this.cfg, W, H);
     if (this.mode === 'continuous') {
       this.eng = new Engine(this.cfg); this.amp = this.eng.amplitudeRanges();
       const f = this.eng.computeFull(); // pixel speed range with the amplitude scaling, as TraceState(continuous=True)
@@ -73,16 +73,10 @@ export class Player {
     this.present(false);
   }
 
-  // Unbounded chunk for continuous mode (compute_chunk, scaled with the amplitude ranges). Duffing configurations
-  // loop their full trace instead, because the desktop's per-chunk RK4 restarts the oscillators (SESSION_LOG.md).
+  // Unbounded chunk for continuous mode (compute_chunk, scaled with the amplitude ranges); Duffing configurations
+  // continue their integration past the end of the trace, as on the desktop.
   chunk(pos, n) {
     const W = this.display.width, H = this.display.height;
-    if (this.tr) {
-      const N = this.N, idx = Array.from({ length: n }, (_, k) => (pos + k) % N);
-      const pick = a => Float64Array.from(idx, i => a[i]);
-      return { px: { x: pick(this.tr.px.x), y: pick(this.tr.px.y) }, raw: { x: pick(this.tr.raw.x), y: pick(this.tr.raw.y) },
-        speedRange: this.tr.speedRange, t: Float64Array.from(idx, i => this.t[i]) };
-    }
     const raw = this.eng.computeChunk(pos, n, true), sr = this.cfg.sample_rate;
     const px = { x: scaleTo(raw.x, this.amp.x, W), y: scaleTo(raw.y, this.amp.y, H) };
     return { raw: px, px, speedRange: this.speedRange,

@@ -134,3 +134,19 @@ def test_duffing_honours_phase_modulation():
     ref = 0.8 * np.sin(w * t + 0.7 + 1.2 * np.sin(2 * np.pi * 0.3 * t))
     assert np.allclose(x, ref, atol=1e-3)  # normalisation by the sampled maximum: ~1e-4
 
+
+def test_duffing_continuous_mode_continues_integration():
+    """Unbounded chunks past the end of the trace continue the RK4 integration instead of restarting it."""
+    eng = HarmonographEngine(_duffing_config())
+    fx, _ = eng.compute_full()
+    n = len(fx)
+    a, _ = eng.compute_chunk(n, 300, unbounded=True)
+    b, _ = eng.compute_chunk(n + 300, 300, unbounded=True)
+    whole, _ = HarmonographEngine(_duffing_config()).compute_chunk(n, 600, unbounded=True)
+    assert np.allclose(np.concatenate([a, b]), whole, rtol=0, atol=1e-12)
+    straddle, _ = HarmonographEngine(_duffing_config()).compute_chunk(n - 100, 300, unbounded=True)
+    assert np.allclose(straddle[:100], fx[-100:], rtol=0, atol=1e-12)
+    assert np.allclose(straddle[100:], a[:200], rtol=0, atol=1e-12)
+    step = np.median(np.abs(np.diff(fx[-300:])))
+    assert abs(a[0] - fx[-1]) < 5 * step  # no jump back to the start position
+

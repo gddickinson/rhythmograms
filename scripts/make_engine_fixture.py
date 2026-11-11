@@ -94,7 +94,8 @@ def chunks():
     out = []
     for name, start, size, unbounded in [("fm_pm", 0, 300, False), ("fm_pm", 7900, 300, False), ("fm_pm", 9000, 300, True),
                                          ("bounce_strobe", 7200, 300, True), ("chorus", 5950, 100, False),
-                                         ("duffing_fm_chorus", 300, 300, True), ("duffing_fm_chorus", 900, 300, False)]:
+                                         ("duffing_fm_chorus", 300, 300, True), ("duffing_fm_chorus", 900, 300, False),
+                                         ("duffing_fm_chorus", 1950, 400, True), ("duffing_phase_pm", 2100, 300, True)]:
         cfg = HarmonographConfig.from_dict(SYNTHETIC[name])
         x, y = HarmonographEngine(cfg).compute_chunk(start, size, unbounded=unbounded)
         out.append({"name": name, "start": start, "size": size, "unbounded": unbounded, "len": len(x),

@@ -68,7 +68,11 @@ export class Engine {
   }
 
   computeFull() {
-    if (!this._full) { const c = this.config; this._full = this.computeWithChorus(linspace(0, c.duration, totalPoints(c))); }
+    if (!this._full) {
+      const c = this.config, n = totalPoints(c), t = linspace(0, c.duration, n);
+      this._full = this.computeWithChorus(t);
+      if (this.hasNonlin) { this.nlFullEnd = this.nlOut; this.nlCursor = [n, this.nlOut]; this.nlStep = n > 1 ? t[1] - t[0] : 1.0 / c.sample_rate; }
+    }
     return this._full;
   }
 
@@ -76,23 +80,44 @@ export class Engine {
     const n = totalPoints(this.config);
     let end = startIdx + chunkSize;
     if (!unbounded) { end = Math.min(end, n); if (startIdx >= n) return { x: new Float64Array(0), y: new Float64Array(0) }; }
-    if (this.hasNonlin && !unbounded) { // cut from the full trajectory, as compute_chunk does for Duffing pendulums
+    if (this.hasNonlin) { // cut from the full trajectory and continued past it, as compute_chunk does for Duffing pendulums
       const f = this.computeFull();
-      return { x: f.x.slice(startIdx, end), y: f.y.slice(startIdx, end) };
+      if (end <= n) return { x: f.x.slice(startIdx, end), y: f.y.slice(startIdx, end) };
+      return this.nonlinearBeyond(startIdx, end);
     }
     const sr = this.config.sample_rate;
     return this.computeWithChorus(linspace(startIdx / sr, end / sr, end - startIdx));
   }
 
-  computeWithChorus(t) {
+  // _nonlinear_beyond: continue the Duffing integration past the full trace on its grid t_k = k * step.
+  nonlinearBeyond(start, end) {
+    const f = this.computeFull(), n = f.x.length;
+    if (this.nlCursor[0] > Math.max(start, n)) this.nlCursor = [n, this.nlFullEnd];
+    const xs = [f.x.slice(start, n)], ys = [f.y.slice(start, n)];
+    let [idx, state] = this.nlCursor;
+    while (idx < end) {
+      const stop = idx < start ? Math.min(start, idx + 5000) : end;
+      const r = this.computeWithChorus(Float64Array.from({ length: stop - idx }, (_, k) => (idx + k) * this.nlStep), state);
+      state = this.nlOut;
+      if (stop > start) { const off = Math.max(0, start - idx); xs.push(r.x.slice(off)); ys.push(r.y.slice(off)); }
+      idx = stop;
+    }
+    this.nlCursor = [idx, state];
+    const cat = a => { const o = new Float64Array(a.reduce((k, v) => k + v.length, 0)); let k = 0; for (const v of a) { o.set(v, k); k += v.length; } return o; };
+    return { x: cat(xs), y: cat(ys) };
+  }
+
+  // nlState (Duffing only): per chorus copy, [states, scales] to continue from; the new ones are left in this.nlOut.
+  computeWithChorus(t, nlState = null) {
     const cc = this.config;
-    if (cc.chorus_count <= 1) { const r = this.computeAt(t); return this.applyStrobe(t, r.x, r.y); }
+    this.nlOut = [];
+    if (cc.chorus_count <= 1) { const r = this.computeAt(t, nlState && nlState[0]); return this.applyStrobe(t, r.x, r.y); }
     const xa = new Float64Array(t.length), ya = new Float64Array(t.length);
     const nc = cc.chorus_count, scale = 1.0 / nc, orig = this.freq.slice();
     for (let i = 0; i < nc; i++) {
       const offset = (i - (nc - 1) / 2.0) * cc.chorus_spread;
       this.freq = orig.map(f => f + offset * 2 * PI);
-      const r = this.computeAt(t);
+      const r = this.computeAt(t, nlState && nlState[i]);
       this.freq = orig;
       for (let j = 0; j < t.length; j++) { xa[j] += r.x[j] * scale; ya[j] += r.y[j] * scale; }
     }
@@ -107,9 +132,9 @@ export class Engine {
     return { x, y };
   }
 
-  computeAt(t) {
+  computeAt(t, nlState = null) {
     const env = this.config.envelope, n = t.length;
-    if (this.hasNonlin) return this.computeNonlinear(t, env);
+    if (this.hasNonlin) return this.computeNonlinear(t, env, nlState);
     const sig = [0, 1, 2, 3].map(() => new Float64Array(n));
     for (let i = 0; i < 4; i++) {
       const f0 = this.freq[i], fmd = this.fmDepth[i], fmf = this.fmFreq[i], p0 = this.phase[i], pmd = this.pmDepth[i], pmf = this.pmFreq[i];
@@ -128,13 +153,14 @@ export class Engine {
 
   // RK4 Duffing integration exactly as _compute_nonlinear: released at x0 = A sin(phase), v0 = A w cos(phase);
   // phase modulation rotates the state in the (x, v/w) plane.
-  computeNonlinear(t, env) {
+  computeNonlinear(t, env, nlState = null) {
     const n = t.length, dt = n > 1 ? t[1] - t[0] : 1.0 / this.config.sample_rate;
-    const sig = [0, 1, 2, 3].map(() => new Float64Array(n));
+    const sig = [0, 1, 2, 3].map(() => new Float64Array(n)), finals = [], scales = [];
     for (let i = 0; i < 4; i++) {
       const omega = this.freq[i], d = this.damp[i], nl = this.nonlin[i], fmd = this.fmDepth[i], fmf = this.fmFreq[i];
       const pmd = this.pmDepth[i], pmf = this.pmFreq[i], rotate = pmd !== 0 && omega !== 0;
       let pos = this.amp[i] * Math.sin(this.phase[i]), vel = this.amp[i] * omega * Math.cos(this.phase[i]);
+      if (nlState) [pos, vel] = nlState[0][i];
       const acc = (p, v, tt) => { const wt = omega + (fmd !== 0 ? fmd * Math.sin(fmf * tt) : 0); return -2 * d * v - wt * wt * p - nl * p * p * p; };
       const s = sig[i];
       for (let j = 0; j < n; j++) {
@@ -147,13 +173,16 @@ export class Engine {
         pos += dt / 6.0 * (k1v + 2 * k2v + 2 * k3v + k4v);
         vel += dt / 6.0 * (k1a + 2 * k2a + 2 * k3a + k4a);
       }
+      finals.push([pos, vel]);
       let maxAbs = 0;
-      for (let j = 0; j < n; j++) maxAbs = Math.max(maxAbs, Math.abs(s[j]));
+      if (nlState) maxAbs = nlState[1][i]; else for (let j = 0; j < n; j++) maxAbs = Math.max(maxAbs, Math.abs(s[j]));
+      scales.push(maxAbs);
       for (let j = 0; j < n; j++) {
         if (maxAbs > 1e-10) s[j] = s[j] / maxAbs * this.amp[i];
         s[j] *= envelopeAt(t[j], d, env);
       }
     }
+    this.nlOut.push([finals, scales]);
     const x = new Float64Array(n), y = new Float64Array(n);
     for (let j = 0; j < n; j++) { x[j] = sig[0][j] + sig[1][j]; y[j] = sig[2][j] + sig[3][j]; }
     return { x, y };

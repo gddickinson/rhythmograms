@@ -32,6 +32,8 @@ class HarmonographEngine:
         self._has_pm = np.any(self._pm_depth != 0)
         self._has_nonlin = np.any(self._nonlin != 0)
         self._full = None
+        self._nl_cursor = self._nl_full_end = None
+        self._nl_out = []
 
     def compute_full(self) -> tuple:
         """Whole trace over [0, duration]; cached (ranges, speed range and Duffing chunks all reuse it)."""
@@ -39,6 +41,12 @@ class HarmonographEngine:
             n = self.config.total_points
             t = np.linspace(0, self.config.duration, n)
             self._full = self._compute_with_chorus(t)
+            if self._has_nonlin:
+                # Duffing state after the last sample (per chorus copy) and the normalisation used, so unbounded
+                # chunks can continue the integration on the same time grid
+                self._nl_cursor = (n, self._nl_out)
+                self._nl_full_end = self._nl_out
+                self._nl_step = t[1] - t[0] if n > 1 else 1.0 / self.config.sample_rate
         return self._full
 
     def compute_chunk(self, start_idx: int, chunk_size: int,
@@ -49,21 +57,49 @@ class HarmonographEngine:
             end_idx = min(end_idx, n)
             if start_idx >= n:
                 return np.array([]), np.array([])
-        if self._has_nonlin and not unbounded:
-            # The RK4 integration starts from rest at the first sample, so a chunk must be cut from the full
-            # trajectory (integrating the chunk on its own would restart the oscillators every chunk).
+        if self._has_nonlin:
+            # The RK4 integration starts at the first sample, so a chunk must be cut from the full trajectory
+            # (integrating the chunk on its own would restart the oscillators); past its end it is continued.
             x, y = self.compute_full()
-            return x[start_idx:end_idx].copy(), y[start_idx:end_idx].copy()
+            if end_idx <= n:
+                return x[start_idx:end_idx].copy(), y[start_idx:end_idx].copy()
+            return self._nonlinear_beyond(start_idx, end_idx)
         t_start = start_idx / self.config.sample_rate
         t_end = end_idx / self.config.sample_rate
         t = np.linspace(t_start, t_end, end_idx - start_idx)
         return self._compute_with_chorus(t)
 
-    def _compute_with_chorus(self, t: np.ndarray) -> tuple:
-        """Compute with optional multi-trace chorus (N detuned copies)."""
+    def _nonlinear_beyond(self, start_idx: int, end_idx: int) -> tuple:
+        """Samples start_idx..end_idx-1 of a Duffing configuration, continuing the integration past the full trace
+        (continuous mode) on its time grid t_k = k * step, with the full trace's normalisation."""
+        fx, fy = self.compute_full()
+        n = len(fx)
+        if self._nl_cursor[0] > max(start_idx, n):  # a jump back: continue again from the end of the full trace
+            self._nl_cursor = (n, self._nl_full_end)
+        xs, ys = [fx[start_idx:n]], [fy[start_idx:n]]
+        idx, state = self._nl_cursor
+        while idx < end_idx:
+            # integrate up to the requested start in blocks without keeping the samples, then the chunk itself
+            stop = min(start_idx, idx + 5000) if idx < start_idx else end_idx
+            x, y = self._compute_with_chorus(np.arange(idx, stop) * self._nl_step, state)
+            state = self._nl_out
+            if stop > start_idx:
+                xs.append(x[max(0, start_idx - idx):])
+                ys.append(y[max(0, start_idx - idx):])
+            idx = stop
+        self._nl_cursor = (idx, state)
+        return np.concatenate(xs), np.concatenate(ys)
+
+    def _compute_with_chorus(self, t: np.ndarray, nl_state=None) -> tuple:
+        """Compute with optional multi-trace chorus (N detuned copies).
+
+        nl_state (Duffing only): per chorus copy, the (states, scales) to continue from; the new ones are left in
+        self._nl_out.
+        """
         cc = self.config
+        self._nl_out = []
         if cc.chorus_count <= 1:
-            x, y = self._compute_at(t)
+            x, y = self._compute_at(t, nl_state[0] if nl_state else None)
             return self._apply_strobe(t, x, y)
 
         # Render N copies with frequency spread, accumulate
@@ -78,7 +114,7 @@ class HarmonographEngine:
             # Temporarily shift frequencies
             orig_freq = self._freq.copy()
             self._freq = orig_freq + offset * 2 * np.pi
-            xi, yi = self._compute_at(t)
+            xi, yi = self._compute_at(t, nl_state[i] if nl_state else None)
             self._freq = orig_freq
             x_acc += xi * scale
             y_acc += yi * scale
@@ -97,12 +133,12 @@ class HarmonographEngine:
         y = np.where(mask, y, np.nan)
         return x, y
 
-    def _compute_at(self, t: np.ndarray) -> tuple:
+    def _compute_at(self, t: np.ndarray, nl_state=None) -> tuple:
         """Compute x, y at given time values with FM/PM and envelope."""
         env = self.config.envelope
 
         if self._has_nonlin:
-            return self._compute_nonlinear(t, env)
+            return self._compute_nonlinear(t, env, nl_state)
 
         signals = np.empty((4, len(t)))
         for i in range(4):
@@ -122,16 +158,18 @@ class HarmonographEngine:
 
         return signals[0] + signals[1], signals[2] + signals[3]
 
-    def _compute_nonlinear(self, t, env):
+    def _compute_nonlinear(self, t, env, nl_state=None):
         """RK4 integration for Duffing nonlinearity.
 
         Each pendulum is released like the linear one, A*sin(w*t + phase): x0 = A*sin(phase), v0 = A*w*cos(phase).
         Phase modulation rotates the state in the (x, v/w) plane by pm(t), which for a linear spring gives exactly
         A*sin(w*t + phase + pm(t)).
+        nl_state: (states, scales) to continue from instead of the release state and this call's own maxima.
         """
         dt = t[1] - t[0] if len(t) > 1 else 1.0 / self.config.sample_rate
         n = len(t)
         signals = np.zeros((4, n))
+        finals, scales = [], []
 
         for i in range(4):
             omega = self._freq[i]
@@ -139,6 +177,8 @@ class HarmonographEngine:
             phase0 = self._phase[i]
             # State: [position, velocity]
             pos, vel = amp * np.sin(phase0), amp * omega * np.cos(phase0)
+            if nl_state is not None:
+                pos, vel = nl_state[0][i]
             d = self._damp[i]
             nl = self._nonlin[i]
             fm_d = self._fm_depth[i]
@@ -171,12 +211,15 @@ class HarmonographEngine:
 
             # Apply envelope
             envelope = self._compute_envelope(t, d, env)
+            finals.append((pos, vel))
             # Normalize amplitude
-            max_abs = np.max(np.abs(signals[i]))
+            max_abs = nl_state[1][i] if nl_state is not None else np.max(np.abs(signals[i]))
+            scales.append(max_abs)
             if max_abs > 1e-10:
                 signals[i] = signals[i] / max_abs * amp
             signals[i] *= envelope
 
+        self._nl_out.append((finals, scales))
         return signals[0] + signals[1], signals[2] + signals[3]
 
     @staticmethod
