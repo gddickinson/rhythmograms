@@ -1,5 +1,7 @@
 """Incremental trace state for animated drawing."""
 
+import numpy as np
+
 from .pendulum import HarmonographConfig
 from .harmonograph import HarmonographEngine
 
@@ -27,10 +29,23 @@ class TraceState:
         else:
             self._x_range, self._y_range = self.engine.compute_ranges()
 
-        self._speed_range = self.engine.compute_speed_range()
+        # In pixels, like the chunk coordinates the renderer measures speeds on (engine units would pin every
+        # normalised speed at 1 and flatten the velocity-sensitive width / opacity).
+        self._speed_range = self._pixel_speed_range()
         self._position = 0
         self._total = config.total_points
         self._paused = False
+
+    def _pixel_speed_range(self) -> tuple:
+        """(min, max) segment length in pixels of the full trace, scaled with this trace's x/y ranges."""
+        x, y = self.engine.compute_full()
+        x = self.engine._scale(x, self._x_range, self.width, 0.05)
+        y = self.engine._scale(y, self._y_range, self.height, 0.05)
+        speed = np.hypot(np.diff(x), np.diff(y))
+        valid = speed[~np.isnan(speed)]
+        if len(valid) == 0:
+            return (0.0, 1.0)
+        return float(valid.min()), float(valid.max())
 
     @property
     def progress(self) -> float:
