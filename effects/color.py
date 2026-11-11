@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from typing import List, Tuple, Optional
 from PyQt6.QtGui import QColor
 
+from effects.style_defaults import COLOR_DEFAULTS as _D
+
 
 @dataclass
 class ColorConfig:
@@ -13,44 +15,44 @@ class ColorConfig:
     gradient_start: QColor = None
     gradient_end: QColor = None
     gradient_mid: QColor = None
-    use_gradient: bool = False
-    use_mid_color: bool = False
-    interpolation: str = "rgb"       # "rgb" or "hsv"
-    line_alpha: int = 180            # 0-255
-    line_width: float = 1.0
+    use_gradient: bool = _D["use_gradient"]
+    use_mid_color: bool = _D["use_mid_color"]
+    interpolation: str = _D["interpolation"]       # "rgb" or "hsv"
+    line_alpha: int = _D["line_alpha"]            # 0-255
+    line_width: float = _D["line_width"]
 
     # Velocity-sensitive drawing
-    velocity_width: bool = False
-    velocity_width_min: float = 0.3
-    velocity_width_max: float = 3.0
-    velocity_opacity: bool = False
-    velocity_opacity_min: int = 40
-    velocity_opacity_max: int = 255
+    velocity_width: bool = _D["velocity_width"]
+    velocity_width_min: float = _D["velocity_width_min"]
+    velocity_width_max: float = _D["velocity_width_max"]
+    velocity_opacity: bool = _D["velocity_opacity"]
+    velocity_opacity_min: int = _D["velocity_opacity_min"]
+    velocity_opacity_max: int = _D["velocity_opacity_max"]
 
     # Rotational symmetry
-    symmetry_order: int = 1          # 1 = none, 2-12 = N-fold
+    symmetry_order: int = _D["symmetry_order"]          # 1 = none, 2-12 = N-fold
 
     # Mirror modes
-    mirror_horizontal: bool = False
-    mirror_vertical: bool = False
+    mirror_horizontal: bool = _D["mirror_horizontal"]
+    mirror_vertical: bool = _D["mirror_vertical"]
 
     # Brush type
-    brush_type: str = "line"         # "line", "dot", "airbrush", "chalk", "ribbon"
+    brush_type: str = _D["brush_type"]         # "line", "dot", "airbrush", "chalk", "ribbon"
 
     # Palette (empty = custom)
-    palette_name: str = ""
+    palette_name: str = _D["palette_name"]
 
     def __post_init__(self):
         if self.line_color is None:
-            self.line_color = QColor(200, 220, 255)
+            self.line_color = QColor(_D["line_color"])
         if self.bg_color is None:
-            self.bg_color = QColor(5, 5, 15)
+            self.bg_color = QColor(_D["bg_color"])
         if self.gradient_start is None:
-            self.gradient_start = QColor(100, 180, 255)
+            self.gradient_start = QColor(_D["gradient_start"])
         if self.gradient_end is None:
-            self.gradient_end = QColor(255, 100, 200)
+            self.gradient_end = QColor(_D["gradient_end"])
         if self.gradient_mid is None:
-            self.gradient_mid = QColor(100, 255, 180)
+            self.gradient_mid = QColor(_D["gradient_mid"])
 
     def color_at(self, t: float) -> QColor:
         """Get the trace color at normalized position t (0.0 to 1.0)."""
@@ -159,25 +161,25 @@ class ColorConfig:
     @classmethod
     def from_dict(cls, d: dict) -> "ColorConfig":
         return cls(
-            line_color=QColor(d.get("line_color", "#c8dcff")),
-            bg_color=QColor(d.get("bg_color", "#05050f")),
-            gradient_start=QColor(d.get("gradient_start", "#64b4ff")),
-            gradient_end=QColor(d.get("gradient_end", "#ff64c8")),
-            gradient_mid=QColor(d.get("gradient_mid", "#64ffb4")),
-            use_gradient=d.get("use_gradient", False),
-            use_mid_color=d.get("use_mid_color", False),
-            interpolation=d.get("interpolation", "rgb"),
-            line_alpha=d.get("line_alpha", 180),
-            line_width=d.get("line_width", 1.0),
-            velocity_width=d.get("velocity_width", False),
-            velocity_width_min=d.get("velocity_width_min", 0.3),
-            velocity_width_max=d.get("velocity_width_max", 3.0),
-            velocity_opacity=d.get("velocity_opacity", False),
-            velocity_opacity_min=d.get("velocity_opacity_min", 40),
-            velocity_opacity_max=d.get("velocity_opacity_max", 255),
-            symmetry_order=d.get("symmetry_order", 1),
-            mirror_horizontal=d.get("mirror_horizontal", False),
-            mirror_vertical=d.get("mirror_vertical", False),
-            brush_type=d.get("brush_type", "line"),
-            palette_name=d.get("palette_name", ""),
+            line_color=QColor(d.get("line_color", _D["line_color"])),
+            bg_color=QColor(d.get("bg_color", _D["bg_color"])),
+            gradient_start=QColor(d.get("gradient_start", _D["gradient_start"])),
+            gradient_end=QColor(d.get("gradient_end", _D["gradient_end"])),
+            gradient_mid=QColor(d.get("gradient_mid", _D["gradient_mid"])),
+            use_gradient=d.get("use_gradient", _D["use_gradient"]),
+            use_mid_color=d.get("use_mid_color", _D["use_mid_color"]),
+            interpolation=d.get("interpolation", _D["interpolation"]),
+            line_alpha=d.get("line_alpha", _D["line_alpha"]),
+            line_width=d.get("line_width", _D["line_width"]),
+            velocity_width=d.get("velocity_width", _D["velocity_width"]),
+            velocity_width_min=d.get("velocity_width_min", _D["velocity_width_min"]),
+            velocity_width_max=d.get("velocity_width_max", _D["velocity_width_max"]),
+            velocity_opacity=d.get("velocity_opacity", _D["velocity_opacity"]),
+            velocity_opacity_min=d.get("velocity_opacity_min", _D["velocity_opacity_min"]),
+            velocity_opacity_max=d.get("velocity_opacity_max", _D["velocity_opacity_max"]),
+            symmetry_order=d.get("symmetry_order", _D["symmetry_order"]),
+            mirror_horizontal=d.get("mirror_horizontal", _D["mirror_horizontal"]),
+            mirror_vertical=d.get("mirror_vertical", _D["mirror_vertical"]),
+            brush_type=d.get("brush_type", _D["brush_type"]),
+            palette_name=d.get("palette_name", _D["palette_name"]),
         )

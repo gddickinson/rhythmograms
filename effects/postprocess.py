@@ -1,8 +1,13 @@
-"""Post-processing effects: inversion, solarization, bloom/glow, vignette."""
+"""Post-processing effects: inversion, solarization, bloom/glow, vignette.
+
+The array effects are plain NumPy; PyQt6 is imported only by the QImage helpers, so the web interface can use
+EffectsConfig and the effects without Qt.
+"""
+
+from __future__ import annotations
 
 from dataclasses import dataclass
 import numpy as np
-from PyQt6.QtGui import QImage
 
 
 @dataclass
@@ -38,6 +43,7 @@ class EffectsConfig:
 
 def qimage_to_array(image: QImage) -> np.ndarray:
     """Convert QImage (Format_ARGB32) to numpy RGBA array."""
+    from PyQt6.QtGui import QImage
     image = image.convertToFormat(QImage.Format.Format_ARGB32)
     w, h = image.width(), image.height()
     ptr = image.bits()
@@ -49,6 +55,7 @@ def qimage_to_array(image: QImage) -> np.ndarray:
 
 def array_to_qimage(arr: np.ndarray) -> QImage:
     """Convert numpy BGRA array back to QImage."""
+    from PyQt6.QtGui import QImage
     h, w, _ = arr.shape
     arr = np.ascontiguousarray(arr)
     return QImage(arr.data, w, h, w * 4, QImage.Format.Format_ARGB32).copy()

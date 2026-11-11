@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rhythmogram Simulator</title>
+<meta name="description" content="Heinrich Heidersberger's rhythmograms in the browser: light traces of a four-pendulum damped harmonograph, with presets, palettes, brushes, symmetry, 3D, post-processing and PNG/SVG export. Ported from the Python/PyQt6 Rhythmogram Simulator.">
+<link rel="icon" href="static/icon.svg">
+<link rel="stylesheet" href="static/style.css">
+<link rel="stylesheet" href="static/style_app.css">
+</head>
+<body>
+<canvas id="bg" aria-hidden="true"></canvas>
+<header class="top">
+  <a class="brand" href="#/"><span class="mark"></span>Rhythmograms</a>
+  <nav class="groups">
+    <a href="#/studio" data-nav="studio">Studio</a>
+    <a href="#/presets" data-nav="presets">Presets</a>
+    <a href="#/gallery" data-nav="gallery">Gallery</a>
+    <a href="#/morph" data-nav="morph">Morph</a>
+    <a href="#/check" data-nav="check">Cross-check</a>
+    <a href="#/about" data-nav="about">About</a>
+  </nav>
+  <div class="right"><a class="small mute" href="https://github.com/gddickinson/rhythmograms" target="_blank" rel="noopener">GitHub</a></div>
+</header>
+<main id="app" tabindex="-1"></main>
+<footer class="foot">Rhythmogram Simulator · <a href="https://github.com/gddickinson/rhythmograms">source on GitHub</a> · <span id="mode"></span></footer>
+<script type="module" src="static/main.js"></script>
+</body>
+</html>

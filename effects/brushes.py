@@ -6,7 +6,7 @@ from PyQt6.QtCore import QPointF, Qt
 from PyQt6.QtGui import QPainter, QPen, QColor, QBrush, QRadialGradient
 
 
-BRUSH_TYPES = ["line", "dot", "airbrush", "chalk", "ribbon"]
+from effects.style_defaults import BRUSH_TYPES  # noqa: F401  (re-exported for the GUI)
 
 
 def draw_segment(painter: QPainter, x1: float, y1: float, x2: float, y2: float,

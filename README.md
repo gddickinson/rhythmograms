@@ -142,6 +142,46 @@ The application opens with a split view: the drawing canvas on the left and tabb
 | `Ctrl+0` | Reset zoom |
 | Double-click | Reset zoom and pan |
 
+## Web app and GitHub Pages site
+
+The simulator also runs in the browser: **https://gddickinson.github.io/rhythmograms/**. The engine
+(`core/harmonograph.py`, trails, 3D projection, morphing), the trace colours and brushes, the post-processing and the
+atmosphere effects are ported to JavaScript (`web/static/`), so the site is the working app, not a gallery: a Studio
+with the desktop's Pend. / Visual / Phys. / Atmos tabs, all presets, the random Gallery, Morph, and PNG / SVG / JSON
+export (the JSON uses the desktop's config format, both ways).
+
+<p align="center">
+  <img src="docs/img/home.png" width="400" alt="Web app home page with a rhythmogram drawing itself">
+  <img src="docs/img/studio.png" width="400" alt="Studio: pendulum controls and the animated canvas">
+</p>
+<p align="center">
+  <img src="docs/img/presets.png" width="260" alt="All built-in presets drawn in the browser">
+  <img src="docs/img/morph.png" width="260" alt="Morphing between two presets">
+  <img src="docs/img/check.png" width="260" alt="Cross-check of the browser engine against the Python engine">
+</p>
+
+### Run the web app
+
+```bash
+pip install -r requirements-web.txt     # FastAPI, uvicorn, numpy, scipy (no PyQt6 needed)
+python run_web.py                       # http://127.0.0.1:8122
+```
+
+The local app serves the same pages plus the JSON API (`/api/presets`, `/api/palettes`, `/api/defaults`,
+`/api/trace/<preset>` and `POST /api/trace`, which computes any configuration with the Python engine).
+`python scripts/build_static.py` exports the static site to `site/`; `.github/workflows/pages.yml` publishes it on
+every push to `main` (one-time setup: Settings -> Pages -> Source: GitHub Actions).
+
+### Tests
+
+```bash
+python -m pytest -q tests/        # API, static build, JS-vs-Python node tests (needs node), desktop regression tests
+python scripts/make_engine_fixture.py --write   # after changing core/ or effects/: refresh the JS reference numbers
+```
+
+The node tests (`web/static/*.test.mjs`) compare the JavaScript engine, colours and effects with numbers computed by
+the Python code (`tests/fixtures/engine_fixture.json`): traces agree to ~1e-12, image effects to one grey level.
+
 ## Project Structure
 
 ```
@@ -180,8 +220,12 @@ rhythmograms/
         export.py                # PNG and SVG export
         animation_export.py      # GIF, video, and time-lapse export
         audio.py                 # WAV spectral analysis for reactive mode
-    presets/                     # 34 built-in preset JSON files
+    presets/                     # built-in preset JSON files
     examples/                    # Example renders
+    web/                         # FastAPI app + static front end (JS port of the engine)
+    scripts/                     # build_static.py, screenshots.py, make_engine_fixture.py
+    tests/                       # web/API tests, desktop regression tests, JS fixture
+    run_web.py                   # starts the web app on port 8122
 ```
 
 ## How It Works
