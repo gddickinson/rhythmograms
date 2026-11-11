@@ -73,11 +73,11 @@ This desktop application lets you explore the same mathematical space interactiv
 - **Screenshot** — capture the full application window
 - **Save/Load** — full configuration persistence as JSON
 
-### 34 Built-in Presets
+### 35 Built-in Presets
 
 **Classic:** Classic Lissajous, Klangflache, Prelude, Fugue, Nocturne, Spirograph Decay, Orbital Bloom, Resonance, Cathedral Rose, Fibonacci Waltz, Double Helix, Quantum Interference, Silk Threads, Stargate, Tidal Drift, Mandala
 
-**Advanced:** Stroboscope, Duffing Chaos, Chorus Nebula, Harmonic Pulse, Woven Light, Morphic Resonance, Strobe Butterfly, Atom
+**Advanced:** Stroboscope, Duffing Chaos, Chorus Nebula, Harmonic Pulse, Woven Light, Morphic Resonance, Strobe Butterfly, Atom, Coiled Spring
 
 **Showcase:** Sacred Geometry, Frozen Lightning, Supernova, Silk Vortex, Pendulum Clock, Neon Mandala, Phantom, Event Horizon, Deep Space, Bioluminescence
 
@@ -112,7 +112,7 @@ The application opens with a split view: the drawing canvas on the left and tabb
 | **Phys.** | Per-pendulum FM/PM/nonlinearity, strobe frequency/duty cycle, multi-trace chorus, trail mode (length/fade/per-pendulum trails) |
 | **Atmos** | Smoke glow, god rays, chromatic aberration, film grain, heat distortion, color grading |
 | **Layers** | Save drawings as layers, build multi-trace compositions, per-layer opacity and visibility |
-| **Preset** | 34 built-in preset thumbnails — click to load |
+| **Preset** | 35 built-in preset thumbnails — click to load |
 | **Gallery** | Auto-generate random configurations with random palettes (uses advanced features) |
 
 ### Menu Bar

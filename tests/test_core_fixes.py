@@ -150,3 +150,8 @@ def test_duffing_continuous_mode_continues_integration():
     step = np.median(np.abs(np.diff(fx[-300:])))
     assert abs(a[0] - fx[-1]) < 5 * step  # no jump back to the start position
 
+
+def test_george1_preset_has_a_name():
+    import json
+    d = json.loads((ROOT / "presets" / "george1.json").read_text())
+    assert d.get("name") == "Coiled Spring"
