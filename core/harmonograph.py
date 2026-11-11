@@ -31,11 +31,15 @@ class HarmonographEngine:
         self._has_fm = np.any(self._fm_depth != 0)
         self._has_pm = np.any(self._pm_depth != 0)
         self._has_nonlin = np.any(self._nonlin != 0)
+        self._full = None
 
     def compute_full(self) -> tuple:
-        n = self.config.total_points
-        t = np.linspace(0, self.config.duration, n)
-        return self._compute_with_chorus(t)
+        """Whole trace over [0, duration]; cached (ranges, speed range and Duffing chunks all reuse it)."""
+        if self._full is None:
+            n = self.config.total_points
+            t = np.linspace(0, self.config.duration, n)
+            self._full = self._compute_with_chorus(t)
+        return self._full
 
     def compute_chunk(self, start_idx: int, chunk_size: int,
                       unbounded: bool = False) -> tuple:
@@ -45,6 +49,11 @@ class HarmonographEngine:
             end_idx = min(end_idx, n)
             if start_idx >= n:
                 return np.array([]), np.array([])
+        if self._has_nonlin and not unbounded:
+            # The RK4 integration starts from rest at the first sample, so a chunk must be cut from the full
+            # trajectory (integrating the chunk on its own would restart the oscillators every chunk).
+            x, y = self.compute_full()
+            return x[start_idx:end_idx].copy(), y[start_idx:end_idx].copy()
         t_start = start_idx / self.config.sample_rate
         t_end = end_idx / self.config.sample_rate
         t = np.linspace(t_start, t_end, end_idx - start_idx)
