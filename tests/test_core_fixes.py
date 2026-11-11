@@ -100,3 +100,37 @@ def test_3d_chunk_uses_global_time():
     cx, cy = canvas.width() / 2.0, canvas.height() / 2.0
     ex, ey = apply_perspective((x - cx) / cx, (y - cy) / cy, z, canvas._projection.focal_length)
     assert np.allclose(xp, ex * cx + cx) and np.allclose(yp, ey * cy + cy)
+
+
+# --- Duffing phase / PM and continuous mode (approved by George, 2026-11-11) -----------------------------------------
+def _single_duffing(**kw):
+    p0 = dict(frequency=2.0, amplitude=0.8, damping=0.01, nonlinearity=0.2)
+    p0.update(kw)
+    return HarmonographConfig(pendulums=[
+        PendulumParams(**p0), PendulumParams(frequency=3.0, amplitude=0.0, damping=0.0),
+        PendulumParams(frequency=3.0, amplitude=1.0, damping=0.01), PendulumParams(frequency=2.0, amplitude=0.0, damping=0.0)],
+        duration=4.0, sample_rate=500.0)
+
+
+def test_duffing_honours_phase():
+    """A Duffing pendulum released at phase pi/2 starts at its full amplitude (x0 = A sin(phase), v0 = A w cos(phase))."""
+    x0, _ = HarmonographEngine(_single_duffing(phase=0.0)).compute_full()
+    x1, _ = HarmonographEngine(_single_duffing(phase=np.pi / 2)).compute_full()
+    assert abs(x0[0]) < 1e-12
+    assert x1[0] == pytest.approx(0.8, rel=1e-6)
+    assert not np.allclose(x0, x1)
+
+
+def test_duffing_honours_phase_modulation():
+    """PM rotates the Duffing state in the (x, v/w) plane; for a near-linear spring it matches the linear formula."""
+    base, _ = HarmonographEngine(_single_duffing()).compute_full()
+    pm, _ = HarmonographEngine(_single_duffing(pm_freq=0.3, pm_depth=1.2)).compute_full()
+    assert not np.allclose(base, pm)
+    # nonlinearity -> 0, no damping: x(t) = A sin(w t + pm(t)) exactly as the linear engine computes it
+    cfg = _single_duffing(nonlinearity=1e-12, damping=0.0, pm_freq=0.3, pm_depth=1.2, phase=0.7)
+    x, _ = HarmonographEngine(cfg).compute_full()
+    t = np.linspace(0, cfg.duration, cfg.total_points)
+    w = 2 * np.pi * 2.0
+    ref = 0.8 * np.sin(w * t + 0.7 + 1.2 * np.sin(2 * np.pi * 0.3 * t))
+    assert np.allclose(x, ref, atol=1e-3)  # normalisation by the sampled maximum: ~1e-4
+

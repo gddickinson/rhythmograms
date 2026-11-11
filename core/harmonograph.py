@@ -123,35 +123,42 @@ class HarmonographEngine:
         return signals[0] + signals[1], signals[2] + signals[3]
 
     def _compute_nonlinear(self, t, env):
-        """RK4 integration for Duffing nonlinearity."""
+        """RK4 integration for Duffing nonlinearity.
+
+        Each pendulum is released like the linear one, A*sin(w*t + phase): x0 = A*sin(phase), v0 = A*w*cos(phase).
+        Phase modulation rotates the state in the (x, v/w) plane by pm(t), which for a linear spring gives exactly
+        A*sin(w*t + phase + pm(t)).
+        """
         dt = t[1] - t[0] if len(t) > 1 else 1.0 / self.config.sample_rate
         n = len(t)
         signals = np.zeros((4, n))
 
         for i in range(4):
-            # State: [position, velocity]
-            pos, vel = 0.0, self._amp[i] * self._freq[i]
             omega = self._freq[i]
+            amp = self._amp[i]
+            phase0 = self._phase[i]
+            # State: [position, velocity]
+            pos, vel = amp * np.sin(phase0), amp * omega * np.cos(phase0)
             d = self._damp[i]
             nl = self._nonlin[i]
             fm_d = self._fm_depth[i]
             fm_f = self._fm_freq[i]
             pm_d = self._pm_depth[i]
             pm_f = self._pm_freq[i]
+            rotate = pm_d != 0 and omega != 0
+
+            # Duffing: x'' + 2*d*x' + w^2*x + nl*x^3 = 0
+            def deriv(p, v, tt):
+                wt = omega + (fm_d * np.sin(fm_f * tt) if fm_d != 0 else 0)
+                return v, -2 * d * v - wt * wt * p - nl * p * p * p
 
             for j in range(n):
                 tj = t[j]
-                signals[i, j] = pos
-
-                # Effective frequency with FM
-                w = omega
-                if fm_d != 0:
-                    w = omega + fm_d * np.sin(fm_f * tj)
-
-                # Duffing: x'' + d*x' + w^2*x + nl*x^3 = 0
-                def deriv(p, v, tt):
-                    wt = omega + (fm_d * np.sin(fm_f * tt) if fm_d != 0 else 0)
-                    return v, -2 * d * v - wt * wt * p - nl * p * p * p
+                if rotate:
+                    delta = pm_d * np.sin(pm_f * tj)
+                    signals[i, j] = pos * np.cos(delta) + vel / omega * np.sin(delta)
+                else:
+                    signals[i, j] = pos
 
                 # RK4 step
                 k1v, k1a = deriv(pos, vel, tj)
@@ -167,7 +174,7 @@ class HarmonographEngine:
             # Normalize amplitude
             max_abs = np.max(np.abs(signals[i]))
             if max_abs > 1e-10:
-                signals[i] = signals[i] / max_abs * self._amp[i]
+                signals[i] = signals[i] / max_abs * amp
             signals[i] *= envelope
 
         return signals[0] + signals[1], signals[2] + signals[3]

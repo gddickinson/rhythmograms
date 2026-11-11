@@ -126,18 +126,20 @@ export class Engine {
     return { x, y };
   }
 
-  // RK4 Duffing integration exactly as _compute_nonlinear (phase and PM are not used there, see SESSION_LOG.md).
+  // RK4 Duffing integration exactly as _compute_nonlinear: released at x0 = A sin(phase), v0 = A w cos(phase);
+  // phase modulation rotates the state in the (x, v/w) plane.
   computeNonlinear(t, env) {
     const n = t.length, dt = n > 1 ? t[1] - t[0] : 1.0 / this.config.sample_rate;
     const sig = [0, 1, 2, 3].map(() => new Float64Array(n));
     for (let i = 0; i < 4; i++) {
       const omega = this.freq[i], d = this.damp[i], nl = this.nonlin[i], fmd = this.fmDepth[i], fmf = this.fmFreq[i];
-      let pos = 0.0, vel = this.amp[i] * omega;
+      const pmd = this.pmDepth[i], pmf = this.pmFreq[i], rotate = pmd !== 0 && omega !== 0;
+      let pos = this.amp[i] * Math.sin(this.phase[i]), vel = this.amp[i] * omega * Math.cos(this.phase[i]);
       const acc = (p, v, tt) => { const wt = omega + (fmd !== 0 ? fmd * Math.sin(fmf * tt) : 0); return -2 * d * v - wt * wt * p - nl * p * p * p; };
       const s = sig[i];
       for (let j = 0; j < n; j++) {
         const tj = t[j];
-        s[j] = pos;
+        if (rotate) { const dl = pmd * Math.sin(pmf * tj); s[j] = pos * Math.cos(dl) + vel / omega * Math.sin(dl); } else s[j] = pos;
         const k1v = vel, k1a = acc(pos, vel, tj);
         const k2v = vel + 0.5 * dt * k1a, k2a = acc(pos + 0.5 * dt * k1v, k2v, tj + 0.5 * dt);
         const k3v = vel + 0.5 * dt * k2a, k3a = acc(pos + 0.5 * dt * k2v, k3v, tj + 0.5 * dt);

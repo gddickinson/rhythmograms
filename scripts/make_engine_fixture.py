@@ -61,6 +61,10 @@ SYNTHETIC = {
                                         _p(frequency=1.5, nonlinearity=0.1), _p(frequency=2.5, damping=0.02)],
                           "duration": 8.0, "sample_rate": 250.0, "chorus_count": 3, "chorus_spread": 0.02,
                           "envelope": {"mode": "breathe", "frequency": 0.2, "strength": 0.5}},
+    "duffing_phase_pm": {"pendulums": [_p(phase=1.1, nonlinearity=0.25, pm_freq=0.3, pm_depth=1.0),
+                                       _p(frequency=3.01, phase=2.0, pm_freq=0.2, pm_depth=0.7), _p(frequency=0.0, amplitude=0.0),
+                                       _p(frequency=1.5, phase=4.0, nonlinearity=0.05)],
+                         "duration": 6.0, "sample_rate": 300.0, "strobe_freq": 1.3, "strobe_duty": 0.7},
 }
 
 
