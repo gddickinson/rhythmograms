@@ -365,12 +365,11 @@ class RhythmogramCanvas(QWidget):
         # Convert pixel coords back to normalized [-1, 1]
         xn = (x - cx) / cx
         yn = (y - cy) / cy
-        # Simple Z from time-based oscillation
-        t_approx = np.linspace(0, len(x) / 1000.0, len(x))
-        z = np.zeros_like(xn)
-        for p in proj.z_pendulums:
-            freq = p.frequency * 2 * math.pi
-            z += p.amplitude * np.sin(freq * t_approx + p.phase) * np.exp(-p.damping * t_approx)
+        # Z at the chunk's real sample times (next_chunk has already advanced the position by one chunk), so the
+        # animation follows the same z(t) as the full render in _apply_3d
+        start = self._trace._position - self._trace.chunk_size if self._trace else 0
+        t = (max(start, 0) + np.arange(len(x))) / self._config.sample_rate
+        z = compute_z(t, proj.z_pendulums)
         # Auto-rotate
         rot_x = proj.rotation_x
         rot_y = proj.rotation_y
