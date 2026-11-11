@@ -222,6 +222,9 @@ class ControlPanel(QWidget):
         super().__init__(parent)
         if config is None:
             config = HarmonographConfig()
+        # Duration and sample rate have no sliders: keep the loaded config's values in get_config()
+        self._duration = config.duration
+        self._sample_rate = config.sample_rate
 
         self._debounce_timer = QTimer(self)
         self._debounce_timer.setSingleShot(True)
@@ -281,9 +284,13 @@ class ControlPanel(QWidget):
         return HarmonographConfig(
             pendulums=[g.get_params() for g in self.groups],
             envelope=self.envelope_group.get_envelope(),
+            duration=self._duration,
+            sample_rate=self._sample_rate,
         )
 
     def set_config(self, config: HarmonographConfig):
+        self._duration = config.duration
+        self._sample_rate = config.sample_rate
         for i, group in enumerate(self.groups):
             group.set_params(config.pendulums[i])
         self.envelope_group.set_envelope(config.envelope)
