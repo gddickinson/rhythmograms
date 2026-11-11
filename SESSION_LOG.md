@@ -28,10 +28,19 @@ all four failed before the fixes):
 4. Animated 3D projection evaluated the Z pendulums on chunk-local time (0..0.3 s at an assumed 1000 Hz). Now the
    chunk's real sample times.
 
-**Open questions for George** (not changed):
-- `_compute_nonlinear` ignores each pendulum's phase and PM (starts every pendulum at x=0, v=A·ω); with any Duffing
-  pendulum all four go through RK4. Using the phase would change the Atom / Deep Space / Duffing Chaos presets.
-- Continuous mode with a Duffing pendulum still restarts the integration every chunk (unbounded chunks); the web
-  replays the full trace instead.
-- README says "34 Built-in Presets"; there are 35 files: `presets/george1.json` has no name (shown as "George1") and
-  carries colour/effects settings that the Preset tab ignores. Keep it as a preset, name it, or move it?
+**Open questions for George**: answered the same day, see below.
+
+## 2026-11-11 (later): fixes approved by George
+
+Each in its own "Fix ..." commit, with regression tests in `tests/test_core_fixes.py` that failed first; the JS engine
+(`web/static/harmonograph_engine.js`) and `tests/fixtures/engine_fixture.json` were updated to match:
+5. Duffing pendulums now honour phase and PM: released at x0 = A·sin(phase), v0 = A·ω·cos(phase); PM rotates the state
+   in the (x, v/ω) plane by pm(t) (exactly A·sin(ωt + phase + pm(t)) for a linear spring). Configurations with phase 0
+   and no PM are unchanged; Atom, Deep Space and Duffing Chaos change (docs/img/presets.png regenerated).
+6. Continuous mode with a Duffing pendulum continues the RK4 integration past the end of the trace (state and
+   normalisation are kept from `compute_full`), instead of restarting every chunk. The web Studio does the same now
+   (it used to replay the full trace).
+7. `presets/george1.json` is named "Coiled Spring" (a fast ~9 Hz near-unison X pair against a slow ~1.5 Hz Y pair:
+   horizontal loops stacked vertically like a spring seen side-on); README counts 35 presets.
+Checks: pytest 58 passed (55 passed + 3 skipped without PyQt6), node 71 + 31 checks, screenshots static and on
+port 8122 all ok, desktop continuous mode on Atom checked offscreen (runs past its 50 s duration).
